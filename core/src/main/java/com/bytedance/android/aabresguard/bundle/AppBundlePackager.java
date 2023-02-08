@@ -3,6 +3,7 @@ package com.bytedance.android.aabresguard.bundle;
 import com.android.tools.build.bundletool.io.AppBundleSerializer;
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.bytedance.android.aabresguard.utils.TimeClock;
+import org.checkerframework.checker.units.qual.C;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -28,7 +29,8 @@ public class AppBundlePackager {
 
     public void execute() throws IOException {
         TimeClock timeClock = new TimeClock();
-        AppBundleSerializer appBundleSerializer = new AppBundleSerializer();
+//        AppBundleSerializer appBundleSerializer = new AppBundleSerializer();
+        CustomAppBundleSerializer appBundleSerializer = new CustomAppBundleSerializer();
         appBundleSerializer.writeToDisk(appBundle, output);
         System.out.println(String.format("package bundle done, cost: %s", timeClock.getCost()));
     }
