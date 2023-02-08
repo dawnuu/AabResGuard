@@ -1,0 +1,25 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+apply plugin: "groovy"
+apply from: rootProject.file('gradle/publish_plugin.gradle')
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation gradleApi()
+    implementation localGroovy()
+    compileOnly "com.android.tools.build:gradle:4.2.2"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.61"
+    implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61"
+    compileOnly "$GROUP_ID:aabresguard-core:$VERSION"
+    api("$GROUP_ID:aabresguard-core:$VERSION") {
+        exclude group: "com.google.guava", module: "guava"
+        exclude group: "com.android.tools.build", module: "gradle"
+    }
+}
+
+configurations {
+    all*.exclude group: "com.android.tools.build", module: "bundletool"
+}
+
+sourceCompatibility = 8
+targetCompatibility = 8

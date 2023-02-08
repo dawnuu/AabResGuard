@@ -1,0 +1,18 @@
+loadSystemProperties(rootProject.file("gradle.properties"))
+loadSystemProperties(rootProject.file("local.properties"))
+
+allprojects {
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+        options.addStringOption('encoding', 'UTF-8')
+    }
+}
+
+static void loadSystemProperties(File path) {
+    if (!path.exists()) {
+        return
+    }
+    Properties properties = new Properties()
+    properties.load(path.newDataInputStream())
+    System.properties.putAll(properties)
+}

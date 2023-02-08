@@ -1,0 +1,43 @@
+apply plugin: 'digital.wup.android-maven-publish'
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.java.srcDirs
+    classifier = 'sources'
+    version = VERSION
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+    version = VERSION
+}
+publishing {
+    publications {
+        Core(MavenPublication) { publication ->
+            project.shadow.component(publication)
+            groupId GROUP_ID
+            artifactId ARTIFACT_ID
+            version VERSION
+
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+
+    repositories {
+        if (System.getProperty("useLocalMaven", "false").equalsIgnoreCase("true")) {
+            maven {
+                url = "${rootProject.projectDir}/repo"
+            }
+        } else {
+            maven {
+                url = REPOSITORY_URL
+                credentials {
+                    username = USERNAME
+                    password = PASSWORD
+                }
+                allowInsecureProtocol true
+            }
+        }
+    }
+}
