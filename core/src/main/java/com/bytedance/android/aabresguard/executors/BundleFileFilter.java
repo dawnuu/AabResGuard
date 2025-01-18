@@ -1,5 +1,9 @@
 package com.bytedance.android.aabresguard.executors;
 
+import static com.android.tools.build.bundletool.model.AppBundle.METADATA_DIRECTORY;
+import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
+import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
+
 import com.android.bundle.Files;
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.android.tools.build.bundletool.model.BundleMetadata;
@@ -30,10 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
-import static com.android.tools.build.bundletool.model.AppBundle.METADATA_DIRECTORY;
-import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
-import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
-
 /**
  * Created by YangJing on 2019/10/12 .
  * Email: yangjing.yeoh@bytedance.com
@@ -50,7 +50,7 @@ public class BundleFileFilter {
     );
     private final ZipFile bundleZipFile;
     private final AppBundle rawAppBundle;
-    private final Set<String> filterRules;
+    private Set<String> filterRules;
 
     private int filterTotalSize = 0;
     private int filterTotalCount = 0;
@@ -59,12 +59,11 @@ public class BundleFileFilter {
         checkFileExistsAndReadable(bundlePath);
         this.bundleZipFile = new ZipFile(bundlePath.toFile());
         this.rawAppBundle = rawAppBundle;
-        if (filterRules == null) {
-            filterRules = new HashSet<>();
+        if (this.filterRules == null) {
+            this.filterRules = new HashSet<>();
         }
-        this.filterRules = filterRules;
-
-        filterRules.addAll(FILE_SIGN);
+        this.filterRules.addAll(filterRules);
+        this.filterRules.addAll(FILE_SIGN);
     }
 
     public AppBundle filter() throws IOException {
