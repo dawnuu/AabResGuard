@@ -25,19 +25,13 @@ publishing {
     }
 
     repositories {
-        if (System.getProperty("useLocalMaven", "false").equalsIgnoreCase("true")) {
-            maven {
-                url = "${rootProject.projectDir}/repo"
+        maven {
+            url System.getenv("MAVEN_URL")
+            credentials {
+                username System.getenv("MAVEN_UPLOAD_USER")
+                password System.getenv("MAVEN_UPLOAD_PASS")
             }
-        } else {
-            maven {
-                url System.getenv("MAVEN_URL")
-                credentials {
-                    username System.getenv("MAVEN_UPLOAD_USER")
-                    password System.getenv("MAVEN_UPLOAD_PASS")
-                }
-                allowInsecureProtocol true
-            }
+            allowInsecureProtocol true
         }
     }
 }
