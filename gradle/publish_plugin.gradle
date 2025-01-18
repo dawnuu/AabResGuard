@@ -20,10 +20,10 @@ publishing {
             }
         } else {
             maven {
-                url = REPOSITORY_URL
+                url System.getenv("MAVEN_URL")
                 credentials {
-                    username = USERNAME
-                    password = PASSWORD
+                    username System.getenv("MAVEN_UPLOAD_USER")
+                    password System.getenv("MAVEN_UPLOAD_PASS")
                 }
                 allowInsecureProtocol true
             }

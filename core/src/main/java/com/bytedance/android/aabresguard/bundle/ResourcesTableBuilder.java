@@ -1,7 +1,5 @@
 package com.bytedance.android.aabresguard.bundle;
 
-import android.support.annotation.NonNull;
-
 import com.android.aapt.Resources;
 
 import java.util.ArrayList;
@@ -11,6 +9,8 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+
+import androidx.annotation.NonNull;
 
 
 /**
