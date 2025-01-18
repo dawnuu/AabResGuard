@@ -1,7 +1,6 @@
 package com.bytedance.android.plugin.tasks
 
 import com.android.build.gradle.api.ApplicationVariant
-import com.android.build.gradle.internal.scope.VariantScope
 import com.bytedance.android.aabresguard.commands.ObfuscateBundleCommand
 import com.bytedance.android.plugin.extensions.AabResGuardExtension
 import com.bytedance.android.plugin.internal.getBundleFilePath
@@ -9,21 +8,19 @@ import com.bytedance.android.plugin.internal.getSigningConfig
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.*
-import java.io.File
-import java.lang.System.out
-import java.nio.file.Path
-import org.gradle.internal.logging.text.StyledTextOutput
-import org.gradle.internal.logging.text.StyledTextOutputFactory
 import org.gradle.internal.logging.text.StyledTextOutput.Style
+import org.gradle.internal.logging.text.StyledTextOutputFactory
+import java.io.File
+import java.nio.file.Path
 import javax.inject.Inject
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 /**
  * Created by YangJing on 2019/10/15 .
  * Email: yangjing.yeoh@bytedance.com
  * Modified 2021/08/11
  */
-open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFactory) : DefaultTask() {
+open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFactory) :
+    DefaultTask() {
 
     @get:Internal
     private lateinit var variant: ApplicationVariant
@@ -32,7 +29,8 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
     lateinit var signingConfig: SigningConfig
 
     @get:Internal
-    var aabResGuard: AabResGuardExtension = project.extensions.getByName("aabResGuard") as AabResGuardExtension
+    var aabResGuard: AabResGuardExtension =
+        project.extensions.getByName("aabResGuard") as AabResGuardExtension
 
     @get:Internal
     private lateinit var bundlePath: Path
@@ -46,19 +44,23 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
         outputs.upToDateWhen { false }
     }
 
-    fun setVariantScope(variant:ApplicationVariant) {
-        this.variant=variant;
+    fun setVariantScope(variant: ApplicationVariant) {
+        this.variant = variant;
         // init bundleFile, obfuscatedBundlePath must init before task action.
         bundlePath = getBundleFilePath(project, variant)
-        obfuscatedBundlePath = File(bundlePath.toFile().parentFile, aabResGuard.obfuscatedBundleFileName).toPath()
+        val aabName = aabResGuard.obfuscatedBundleFileName.ifBlank {
+            "${variant.applicationId}_${variant.versionName}_${variant.versionCode}.aab"
+        }
+        obfuscatedBundlePath = File(bundlePath.toFile().parentFile, aabName).toPath()
     }
-/*
-    @InputFile
-    @Optional
-    fun getObfuscatedBundlePath(): Path {
-        return obfuscatedBundlePath
-    }
-*/
+
+    /*
+        @InputFile
+        @Optional
+        fun getObfuscatedBundlePath(): Path {
+            return obfuscatedBundlePath
+        }
+    */
     private val out = outputFactory.create("AabResGuardTask")
 
     @TaskAction
@@ -72,25 +74,25 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
         prepareUnusedFile()
 
         val command = ObfuscateBundleCommand.builder()
-                .setEnableObfuscate(aabResGuard.enableObfuscate)
-                .setBundlePath(bundlePath)
-                .setOutputPath(obfuscatedBundlePath)
-                .setMergeDuplicatedResources(aabResGuard.mergeDuplicatedRes)
-                .setWhiteList(aabResGuard.whiteList)
-                .setFilterFile(aabResGuard.enableFilterFiles)
-                .setFileFilterRules(aabResGuard.filterList)
-                .setRemoveStr(aabResGuard.enableFilterStrings)
-                .setUnusedStrPath(aabResGuard.unusedStringPath)
-                .setLanguageWhiteList(aabResGuard.languageWhiteList)
+            .setEnableObfuscate(aabResGuard.enableObfuscate)
+            .setBundlePath(bundlePath)
+            .setOutputPath(obfuscatedBundlePath)
+            .setMergeDuplicatedResources(aabResGuard.mergeDuplicatedRes)
+            .setWhiteList(aabResGuard.whiteList)
+            .setFilterFile(aabResGuard.enableFilterFiles)
+            .setFileFilterRules(aabResGuard.filterList)
+            .setRemoveStr(aabResGuard.enableFilterStrings)
+            .setUnusedStrPath(aabResGuard.unusedStringPath)
+            .setLanguageWhiteList(aabResGuard.languageWhiteList)
         if (aabResGuard.mappingFile != null) {
             command.setMappingPath(aabResGuard.mappingFile)
         }
 
         if (signingConfig.storeFile != null && signingConfig.storeFile!!.exists()) {
             command.setStoreFile(signingConfig.storeFile!!.toPath())
-                    .setKeyAlias(signingConfig.keyAlias)
-                    .setKeyPassword(signingConfig.keyPassword)
-                    .setStorePassword(signingConfig.storePassword)
+                .setKeyAlias(signingConfig.keyAlias)
+                .setKeyPassword(signingConfig.keyPassword)
+                .setStorePassword(signingConfig.storePassword)
         }
         command.build().execute()
     }
@@ -109,8 +111,10 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
                 }
             }
         } else {
-            out.style(Style.Error).println("not exists unused.txt : ${usedFile.absolutePath}\n" +
-                    "use default path : ${aabResGuard.unusedStringPath}")
+            out.style(Style.Error).println(
+                "not exists unused.txt : ${usedFile.absolutePath}\n" +
+                        "use default path : ${aabResGuard.unusedStringPath}"
+            )
         }
     }
 
