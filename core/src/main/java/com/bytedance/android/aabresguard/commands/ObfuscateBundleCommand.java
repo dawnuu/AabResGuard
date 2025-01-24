@@ -136,12 +136,14 @@ public abstract class ObfuscateBundleCommand {
                 .addFlag(
                         CommandHelp.FlagDescription.builder()
                                 .setFlagName(REMOVE_BUNDLE_METADATA_FLAG.getName())
+                                .setExampleValue("remove-bundle-metadata=true")
                                 .setOptional(true)
                                 .setDescription("If set true, the bundle metadata will be removed")
                                 .build())
                 .addFlag(
                         CommandHelp.FlagDescription.builder()
                                 .setFlagName(REMOVE_ROOT_FILES_FLAG.getName())
+                                .setExampleValue("remove-root-files=true")
                                 .setOptional(true)
                                 .setDescription("If set true, the root files will be removed")
                                 .build())
