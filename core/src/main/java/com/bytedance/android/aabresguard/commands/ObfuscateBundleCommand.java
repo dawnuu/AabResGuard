@@ -1,5 +1,9 @@
 package com.bytedance.android.aabresguard.commands;
 
+import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
+import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
+import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.checkFlagPresent;
+
 import com.android.tools.build.bundletool.flags.Flag;
 import com.android.tools.build.bundletool.flags.ParsedFlags;
 import com.android.tools.build.bundletool.model.AppBundle;
@@ -9,6 +13,7 @@ import com.bytedance.android.aabresguard.bundle.AppBundleAnalyzer;
 import com.bytedance.android.aabresguard.bundle.AppBundlePackager;
 import com.bytedance.android.aabresguard.bundle.AppBundleSigner;
 import com.bytedance.android.aabresguard.executors.BundleFileFilter;
+import com.bytedance.android.aabresguard.executors.BundleMetadataRemove;
 import com.bytedance.android.aabresguard.executors.BundleStringFilter;
 import com.bytedance.android.aabresguard.executors.DuplicatedResourcesMerger;
 import com.bytedance.android.aabresguard.executors.ResourcesObfuscator;
@@ -28,10 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
-import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
-import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.checkFlagPresent;
-
 /**
  * Command responsible for obfuscate an App Bundle's resources from App Bundle file.
  * <p>
@@ -49,6 +50,7 @@ public abstract class ObfuscateBundleCommand {
     private static final Flag<Path> MAPPING_FLAG = Flag.path("mapping");
 
     private static final Flag<Boolean> MERGE_DUPLICATED_RES_FLAG = Flag.booleanFlag("merge-duplicated-res");
+    private static final Flag<Boolean> REMOVE_BUNDLE_METADATA_FLAG = Flag.booleanFlag("remove-bundle-metadata");
 
     private static final Flag<Boolean> DISABLE_SIGN_FLAG = Flag.booleanFlag("disable-sign");
     private static final Flag<Path> STORE_FILE_FLAG = Flag.path("storeFile");
@@ -129,6 +131,12 @@ public abstract class ObfuscateBundleCommand {
                                 .setOptional(true)
                                 .setDescription("Path of the key password.")
                                 .build())
+                .addFlag(
+                        CommandHelp.FlagDescription.builder()
+                                .setFlagName(REMOVE_BUNDLE_METADATA_FLAG.getName())
+                                .setOptional(true)
+                                .setDescription("If set true, the bundle metadata will be removed")
+                                .build())
                 .build();
     }
 
@@ -140,6 +148,7 @@ public abstract class ObfuscateBundleCommand {
         Builder builder = builder();
         builder.setEnableObfuscate(true);
         builder.setBundlePath(BUNDLE_LOCATION_FLAG.getRequiredValue(flags));
+        REMOVE_BUNDLE_METADATA_FLAG.getValue(flags).ifPresent(builder::setRemoveBundleMetadata);
         // config
         Path path = CONFIG_FLAG.getRequiredValue(flags);
         AabResGuardConfig config = new AabResGuardXmlParser(path).parse();
@@ -216,6 +225,15 @@ public abstract class ObfuscateBundleCommand {
             ResourcesObfuscator obfuscator = new ResourcesObfuscator(getBundlePath(), appBundle, getWhiteList(), getOutputPath().getParent(), mappingPath);
             appBundle = obfuscator.obfuscate();
         }
+
+        //remove BUNDLE-METADATA
+        if (getRemoveBundleMetadata().isPresent() && getRemoveBundleMetadata().get()) {
+            BundleMetadataRemove bundleMetadataRemove = new BundleMetadataRemove(getBundlePath(), appBundle);
+            appBundle = bundleMetadataRemove.remove();
+        }
+
+        // remove root and META-INF/*.MF META-INF/*.SF
+
         // package bundle
         AppBundlePackager packager = new AppBundlePackager(appBundle, getOutputPath());
         packager.execute();
@@ -263,6 +281,8 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Optional<Boolean> getMergeDuplicatedResources();
 
+    public abstract Optional<Boolean> getRemoveBundleMetadata();
+
     public abstract Optional<Boolean> getDisableSign();
 
     public abstract Set<String> getWhiteList();
@@ -280,6 +300,8 @@ public abstract class ObfuscateBundleCommand {
 
     @AutoValue.Builder
     public abstract static class Builder {
+        public abstract Builder setRemoveBundleMetadata(Boolean enable);
+
         public abstract Builder setEnableObfuscate(Boolean enable);
 
         public abstract Builder setBundlePath(Path bundlePath);
@@ -318,7 +340,7 @@ public abstract class ObfuscateBundleCommand {
             ObfuscateBundleCommand command = autoBuild();
             checkFileExistsAndReadable(command.getBundlePath());
             //If file exists, just delete it instead of throwing exception
-            if(command.getOutputPath().toFile().exists()){
+            if (command.getOutputPath().toFile().exists()) {
                 command.getOutputPath().toFile().delete();
             }
 

@@ -7,7 +7,8 @@ import com.bytedance.android.plugin.internal.getBundleFilePath
 import com.bytedance.android.plugin.internal.getSigningConfig
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.logging.text.StyledTextOutput.Style
 import org.gradle.internal.logging.text.StyledTextOutputFactory
 import java.io.File
@@ -80,6 +81,7 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setMergeDuplicatedResources(aabResGuard.mergeDuplicatedRes)
             .setWhiteList(aabResGuard.whiteList)
             .setFilterFile(aabResGuard.enableFilterFiles)
+            .setRemoveBundleMetadata(aabResGuard.removeBundleMetadata)
             .setFileFilterRules(aabResGuard.filterList)
             .setRemoveStr(aabResGuard.enableFilterStrings)
             .setUnusedStrPath(aabResGuard.unusedStringPath)

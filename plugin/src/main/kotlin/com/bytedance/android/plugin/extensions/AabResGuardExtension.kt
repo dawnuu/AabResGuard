@@ -14,6 +14,7 @@ open class AabResGuardExtension {
     var mergeDuplicatedRes: Boolean = false
     var enableFilterFiles: Boolean = false
     var filterList: Set<String>? = HashSet()
+    var removeBundleMetadata: Boolean = true
     var enableFilterStrings: Boolean = false
     var unusedStringPath: String? = ""
     var languageWhiteList: Set<String>? = HashSet()
@@ -28,6 +29,7 @@ open class AabResGuardExtension {
                 "\tenableFilterFiles=$enableFilterFiles\n" +
                 "\tfilterList=${if (filterList == null) null else filterList}" +
                 "\tenableFilterStrings=$enableFilterStrings\n" +
+                "\tremoveBundleMetadata=$removeBundleMetadata\n" +
                 "\tunusedStringPath=$unusedStringPath\n" +
                 "\tlanguageWhiteoolean`List=${if (languageWhiteList == null) null else languageWhiteList}"
     }

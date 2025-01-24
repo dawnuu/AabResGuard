@@ -1,15 +1,14 @@
 package com.bytedance.android.aabresguard.bundle;
 
+import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileDoesNotExist;
+
 import com.android.tools.build.bundletool.io.AppBundleSerializer;
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.bytedance.android.aabresguard.utils.TimeClock;
-import org.checkerframework.checker.units.qual.C;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.logging.Logger;
-
-import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileDoesNotExist;
 
 /**
  * Created by YangJing on 2019/10/11 .
@@ -29,8 +28,7 @@ public class AppBundlePackager {
 
     public void execute() throws IOException {
         TimeClock timeClock = new TimeClock();
-//        AppBundleSerializer appBundleSerializer = new AppBundleSerializer();
-        CustomAppBundleSerializer appBundleSerializer = new CustomAppBundleSerializer();
+        AppBundleSerializer appBundleSerializer = new AppBundleSerializer();
         appBundleSerializer.writeToDisk(appBundle, output);
         System.out.println(String.format("package bundle done, cost: %s", timeClock.getCost()));
     }
