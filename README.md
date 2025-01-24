@@ -1,126 +1,71 @@
-# AabResGuard - Artic Fox Edition
-<h1 align="center">
-  <img src="wiki/images/logo.png" height="220" width="460"/>
-  <p align="center" style="font-size: 0.3em">The tool of obfuscated aab resources</p>
-</h1>
+# AabResGuard
 
-[Download V.0.1.10](https://github.com/martinloren/mvn-repo/raw/main/AabResGuard_0.1.10.zip)
+> 本工具由字节跳动抖音 Android 团队提供。
 
-[![License](https://img.shields.io/badge/license-Apache2.0-brightgreen)](LICENSE) [![Bundletool](https://img.shields.io/badge/Dependency-Bundletool/0.10.0-blue)](https://github.com/google/bundletool)
+## 特性
 
-**[English](README.md)** | [简体中文](wiki/zh-cn/README.md)
+> 针对 aab 文件的资源混淆工具
 
-> Powered by bytedance douyin android team.
+- **资源去重：** 对重复资源文件进行合并，缩减包体积。
+- **文件过滤：** 支持对 `bundle` 包中的文件进行过滤，目前只支持 `MATE-INFO/`、`lib/` 路径下的过滤。
+- **白名单：** 白名单中的资源，名称不予混淆。
+- **增量混淆：** 输入 `mapping` 文件，支持增量混淆。
+- **文案删除：** 输入按行分割的字符串文件，移除文案及翻译。
 
-## Features
-> The tool of obfuscated aab resources.
+## 快速开始
 
-- **Merge duplicated resources:** Consolidate duplicate resource files to reduce package size.
-- **Filter bundle files:** Support for filtering files in the `bundle` package. Currently only supports filtering in the `MATE-INFO/` and `lib/` paths.
-- **White list:** The resources in the whitelist are not to be obfuscated.
-- **Incremental obfuscation:** Input the `mapping` file to support incremental obfuscation.
-- **Remove string:** Input the unused file splits by lines to support remove strings.
-- **???:** Looking ahead, there will be more feature support, welcome to submit PR & issue.
-
-## [Data of size savings](wiki/en/DATA.md)
-**AabResGuard** is a resource obfuscation tool powered by the douyin Android team. It has been launched at the end of July 2018 in several overseas products, such as **Tiktok, Vigo**, etc.
-There is no feedback on related resource issues.
-For more data details, please go to **[Data of size savings](wiki/en/DATA.md)**.
-
-## Quick start
-- **Command tool:** Support command line.
-- **Gradle plugin:** Support for `gradle plugin`, using the original packaging command to execute obfuscation.
+- **命令行工具：** 支持命令行一键输入输出。
+- **Gradle plugin：** 支持 `gradle plugin`，使用原始打包命令执行混淆。
 
 ### Gradle plugin
-Configured in `build.gradle(root project)`
+
+在 `build.gradle(root project)` 中进行配置
+
 ```gradle
 buildscript {
   repositories {
     mavenCentral()
-    mavenLocal()
     google()
-    maven { url 'https://raw.githubusercontent.com/martinloren/AabResGuard/mvn-repo' }
    }
   dependencies {
-    classpath "com.bytedance.android:aabresguard-plugin:0.1.10"
+    classpath "com.bytedance.android:aabresguard-plugin:0.1.13"
   }
 }
 ```
 
-Configured in `build.gradle(application)`
+在 `build.gradle(application)` 中配置
+
 ```gradle
 apply plugin: "com.bytedance.android.aabResGuard"
 aabResGuard {
-    //mappingFile = file("mapping.txt").toPath() // Mapping file used for incremental obfuscation
-    whiteList = [ // White list rules
+    mappingFile = file("mapping.txt").toPath() // 用于增量混淆的 mapping 文件
+    whiteList = [ // 白名单规则
         "*.R.raw.*",
-        "*.R.drawable.icon",
-        // Google-services & Firebase
-        "*.R.string.google_app_id",
-        "*.R.string.gcm_defaultSenderId",
-        "*.R.string.default_web_client_id",
-        "*.R.string.ga_trackingId",
-        "*.R.string.firebase_database_url",
-        "*.R.string.google_api_key",
-        "*.R.string.google_crash_reporting_api_key",
-        "*.R.string.default_web_client_id",
-        "*.R.string.gcm_defaultSenderId",
-        "*.R.string.google_app_id",
-        "*.R.string.google_crash_reporting_api_key",
-        "*.R.string.google_storage_bucket",
-        "*.R.string.project_id"
+        "*.R.drawable.icon"
     ]
-    obfuscatedBundleFileName = "duplicated-app.aab" // Obfuscated file name, must end with '.aab'
-    mergeDuplicatedRes = true // Whether to allow the merge of duplicate resources
-    enableFilterFiles = true // Whether to allow filter files
-    filterList = [ // file filter rules
+    obfuscatedBundleFileName = "duplicated-app.aab" // 混淆后的文件名称，必须以 `.aab` 结尾，默认文件名为packageName_versioName_versionCode.aab
+    mergeDuplicatedRes = true // 是否允许去除重复资源
+    enableFilterFiles = true // 是否允许过滤文件
+    filterList = [ // 文件过滤规则
         "*/arm64-v8a/*",
         "META-INF/*"
     ]
-
-    enableFilterStrings = false // switch of filter strings
-    unusedStringPath = file("unused.txt").toPath() // strings will be filtered in this file
-    languageWhiteList = ["en", "zh"] // keep en,en-xx,zh,zh-xx etc. remove others.
+    enableFilterStrings = false // 过滤文案
+    removeBundleMetadata = true // 是否移除BUNDLE-METADATA，默认开启
+    unusedStringPath = file("unused.txt").toPath() // 过滤文案列表路径 默认在mapping同目录查找
+    languageWhiteList = ["en", "zh"] // 保留en,en-xx,zh,zh-xx等语言，其余均删除
 }
 ```
 
-The `aabResGuard plugin` intrudes the `bundle` packaging process and can be obfuscated by executing the original packaging commands.
+`aabResGuard plugin` 侵入了 `bundle` 打包流程，可以直接执行原始打包命令进行混淆。
+
 ```cmd
 ./gradlew clean :app:bundleDebug --stacktrace
 ```
 
-Get the obfuscated `bundle` file path by `gradle` .
+通过 `gradle` 获取混淆后的 `bundle` 文件路径
+
 ```groovy
 def aabResGuardPlugin = project.tasks.getByName("aabresguard${VARIANT_NAME}")
 Path bundlePath = aabResGuardPlugin.getObfuscatedBundlePath()
 ```
-
-### [Whitelist](wiki/en/WHITELIST.md)
-The resources that can not be confused. Welcome PR your configs which is not included in [WHITELIST](wiki/en/WHITELIST.md)
-
-### [Command line](wiki/en/COMMAND.md)
-**AabResGuard** provides a `jar` file that can be executed directly from the command line. More details, please go to **[Command Line](wiki/en/COMMAND.md)**.
-
-### [Output](wiki/en/OUTPUT.md)
-After the packaging is completed, the obfuscated file and the log files will be output. More details, please go to **[Output File](wiki/en/OUTPUT.md)**.
-- **resources-mapping.txt:** Resource obfuscation mapping, which can be used as the next obfuscation input to achieve incremental obfuscate.
-- **aab:** Optimized aab file.
-- **-duplicated.txt:** duplicated file logging.
-
-## [Change log](wiki/en/CHANGELOG.md)
-Version change log. More details, please go to **[Change Log](wiki/en/CHANGELOG.md)** .
-
-## [Contribute](wiki/en/CONTRIBUTOR.md)
-Read the details to learn how to participate in the improvement **AabResGuard**.
-
-### Contributor
-* [JingYeoh](https://github.com/JingYeoh)
-* [Jun Li]()
-* [Zilai Jiang](https://github.com/Zzzia)
-* [Zhiqian Yang](https://github.com/yangzhiqian)
-* [Xiaoshuang Bai (Designer)](https://www.behance.net/shawnpai)
-* [Martinloren](https://github.com/martinloren)
-
-## Thanks
-* [AndResGuard](https://github.com/shwenzhang/AndResGuard/)
-* [BundleTool](https://github.com/google/bundletool)
