@@ -82,6 +82,7 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setWhiteList(aabResGuard.whiteList)
             .setFilterFile(aabResGuard.enableFilterFiles)
             .setRemoveBundleMetadata(aabResGuard.removeBundleMetadata)
+            .setRemoveRootFiles(aabResGuard.removeRootFiles)
             .setFileFilterRules(aabResGuard.filterList)
             .setRemoveStr(aabResGuard.enableFilterStrings)
             .setUnusedStrPath(aabResGuard.unusedStringPath)

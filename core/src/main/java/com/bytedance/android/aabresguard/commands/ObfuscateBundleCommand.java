@@ -12,6 +12,7 @@ import com.bytedance.android.aabresguard.android.JarSigner;
 import com.bytedance.android.aabresguard.bundle.AppBundleAnalyzer;
 import com.bytedance.android.aabresguard.bundle.AppBundlePackager;
 import com.bytedance.android.aabresguard.bundle.AppBundleSigner;
+import com.bytedance.android.aabresguard.executors.BaseRootFileRemove;
 import com.bytedance.android.aabresguard.executors.BundleFileFilter;
 import com.bytedance.android.aabresguard.executors.BundleMetadataRemove;
 import com.bytedance.android.aabresguard.executors.BundleStringFilter;
@@ -51,6 +52,7 @@ public abstract class ObfuscateBundleCommand {
 
     private static final Flag<Boolean> MERGE_DUPLICATED_RES_FLAG = Flag.booleanFlag("merge-duplicated-res");
     private static final Flag<Boolean> REMOVE_BUNDLE_METADATA_FLAG = Flag.booleanFlag("remove-bundle-metadata");
+    private static final Flag<Boolean> REMOVE_ROOT_FILES_FLAG = Flag.booleanFlag("remove-root-files");
 
     private static final Flag<Boolean> DISABLE_SIGN_FLAG = Flag.booleanFlag("disable-sign");
     private static final Flag<Path> STORE_FILE_FLAG = Flag.path("storeFile");
@@ -137,6 +139,12 @@ public abstract class ObfuscateBundleCommand {
                                 .setOptional(true)
                                 .setDescription("If set true, the bundle metadata will be removed")
                                 .build())
+                .addFlag(
+                        CommandHelp.FlagDescription.builder()
+                                .setFlagName(REMOVE_ROOT_FILES_FLAG.getName())
+                                .setOptional(true)
+                                .setDescription("If set true, the root files will be removed")
+                                .build())
                 .build();
     }
 
@@ -149,6 +157,7 @@ public abstract class ObfuscateBundleCommand {
         builder.setEnableObfuscate(true);
         builder.setBundlePath(BUNDLE_LOCATION_FLAG.getRequiredValue(flags));
         REMOVE_BUNDLE_METADATA_FLAG.getValue(flags).ifPresent(builder::setRemoveBundleMetadata);
+        REMOVE_ROOT_FILES_FLAG.getValue(flags).ifPresent(builder::setRemoveRootFiles);
         // config
         Path path = CONFIG_FLAG.getRequiredValue(flags);
         AabResGuardConfig config = new AabResGuardXmlParser(path).parse();
@@ -232,7 +241,11 @@ public abstract class ObfuscateBundleCommand {
             appBundle = bundleMetadataRemove.remove();
         }
 
-        // remove root and META-INF/*.MF META-INF/*.SF
+        // remove root
+        if (getRemoveRootFiles().isPresent() && getRemoveRootFiles().get()) {
+            BaseRootFileRemove baseRootFileRemove = new BaseRootFileRemove(getBundlePath(), appBundle);
+            appBundle = baseRootFileRemove.remove();
+        }
 
         // package bundle
         AppBundlePackager packager = new AppBundlePackager(appBundle, getOutputPath());
@@ -281,6 +294,8 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Optional<Boolean> getMergeDuplicatedResources();
 
+    public abstract Optional<Boolean> getRemoveRootFiles();
+
     public abstract Optional<Boolean> getRemoveBundleMetadata();
 
     public abstract Optional<Boolean> getDisableSign();
@@ -301,6 +316,8 @@ public abstract class ObfuscateBundleCommand {
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder setRemoveBundleMetadata(Boolean enable);
+
+        public abstract Builder setRemoveRootFiles(Boolean enable);
 
         public abstract Builder setEnableObfuscate(Boolean enable);
 

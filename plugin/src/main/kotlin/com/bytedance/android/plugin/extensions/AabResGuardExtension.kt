@@ -15,22 +15,24 @@ open class AabResGuardExtension {
     var enableFilterFiles: Boolean = false
     var filterList: Set<String>? = HashSet()
     var removeBundleMetadata: Boolean = true
+    var removeRootFiles: Boolean = false
     var enableFilterStrings: Boolean = false
     var unusedStringPath: String? = ""
     var languageWhiteList: Set<String>? = HashSet()
 
     override fun toString(): String {
         return "-------------- AabResGuardExtension --------------\n" +
-                "\tenableObfuscate=$enableObfuscate" +
-                "\tmappingFile=$mappingFile" +
+                "\tenableObfuscate=$enableObfuscate\n" +
+                "\tmappingFile=$mappingFile\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +
                 "\tobfuscatedBundleFileName=$obfuscatedBundleFileName\n" +
                 "\tmergeDuplicatedRes=$mergeDuplicatedRes\n" +
                 "\tenableFilterFiles=$enableFilterFiles\n" +
-                "\tfilterList=${if (filterList == null) null else filterList}" +
+                "\tfilterList=${if (filterList == null) null else filterList}\n" +
                 "\tenableFilterStrings=$enableFilterStrings\n" +
                 "\tremoveBundleMetadata=$removeBundleMetadata\n" +
+                "\tremoveRootFiles=$removeRootFiles\n" +
                 "\tunusedStringPath=$unusedStringPath\n" +
-                "\tlanguageWhiteoolean`List=${if (languageWhiteList == null) null else languageWhiteList}"
+                "\tlanguageWhiteoolean`List=${if (languageWhiteList == null) null else languageWhiteList}\n"
     }
 }
