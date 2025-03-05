@@ -25,13 +25,16 @@ publishing {
     }
 
     repositories {
+//        maven {
+//            url System.getenv("MAVEN_URL")
+//            credentials {
+//                username System.getenv("MAVEN_UPLOAD_USER")
+//                password System.getenv("MAVEN_UPLOAD_PASS")
+//            }
+//            allowInsecureProtocol true
+//        }
         maven {
-            url System.getenv("MAVEN_URL")
-            credentials {
-                username System.getenv("MAVEN_UPLOAD_USER")
-                password System.getenv("MAVEN_UPLOAD_PASS")
-            }
-            allowInsecureProtocol true
+            url '../../../maven/gradle'
         }
     }
 }
