@@ -8,14 +8,6 @@ buildscript {
         maven { url 'https://nexus.web.cern.ch/nexus/content/repositories/public/' }
         mavenLocal()
         maven {
-            url System.getenv("MAVEN_URL")
-            credentials {
-                username System.getenv("MAVEN_UPLOAD_USER")
-                password System.getenv("MAVEN_UPLOAD_PASS")
-            }
-            allowInsecureProtocol true
-        }
-        maven {
             url "https://plugins.gradle.org/m2/"
         }
     }
@@ -35,14 +27,6 @@ allprojects {
         mavenCentral()
         maven { url 'https://nexus.web.cern.ch/nexus/content/repositories/public/' }
         mavenLocal()
-        maven {
-            url System.getenv("MAVEN_URL")
-            credentials {
-                username System.getenv("MAVEN_UPLOAD_USER")
-                password System.getenv("MAVEN_UPLOAD_PASS")
-            }
-            allowInsecureProtocol true
-        }
     }
 }
 
