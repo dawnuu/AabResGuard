@@ -65,7 +65,7 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
     private val out = outputFactory.create("AabResGuardTask")
 
     @TaskAction
-    private fun execute() {
+    fun execute() {
         out.style(Style.Info).println(aabResGuard.toString())
         // init signing config
         signingConfig = getSigningConfig(project, variant)
