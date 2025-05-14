@@ -80,6 +80,7 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setOutputPath(obfuscatedBundlePath)
             .setMergeDuplicatedResources(aabResGuard.mergeDuplicatedRes)
             .setWhiteList(aabResGuard.whiteList)
+            .setBundleMetaDataWhiteList(aabResGuard.bundleMetaDataWhiteList)
             .setFilterFile(aabResGuard.enableFilterFiles)
             .setRemoveBundleMetadata(aabResGuard.removeBundleMetadata)
             .setRemoveRootFiles(aabResGuard.removeRootFiles)

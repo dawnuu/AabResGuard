@@ -239,7 +239,7 @@ public abstract class ObfuscateBundleCommand {
 
         //remove BUNDLE-METADATA
         if (getRemoveBundleMetadata().isPresent() && getRemoveBundleMetadata().get()) {
-            BundleMetadataRemove bundleMetadataRemove = new BundleMetadataRemove(getBundlePath(), appBundle);
+            BundleMetadataRemove bundleMetadataRemove = new BundleMetadataRemove(getBundlePath(), appBundle, getBundleMetaDataWhiteList());
             appBundle = bundleMetadataRemove.remove();
         }
 
@@ -314,9 +314,13 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Optional<Set<String>> getLanguageWhiteList();
 
+    public abstract Set<String> getBundleMetaDataWhiteList();
+
 
     @AutoValue.Builder
     public abstract static class Builder {
+        public abstract Builder setBundleMetaDataWhiteList(Set<String> whiteList);
+
         public abstract Builder setRemoveBundleMetadata(Boolean enable);
 
         public abstract Builder setRemoveRootFiles(Boolean enable);
