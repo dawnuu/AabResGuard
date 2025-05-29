@@ -59,7 +59,7 @@ public class BundleMetadataRemove {
         if (start == -1) {
             return null;
         } else {
-            return name.substring(start + startStr.length()).replaceFirst("/", ".");
+            return name.substring(start + startStr.length());
         }
     }
 
