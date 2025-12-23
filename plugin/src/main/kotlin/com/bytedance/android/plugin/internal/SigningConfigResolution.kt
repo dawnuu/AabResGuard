@@ -3,21 +3,55 @@ package com.bytedance.android.plugin.internal
 import com.android.build.api.variant.ApplicationVariant
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import java.io.File
 
 internal fun getSigningConfig(project: Project, variant: ApplicationVariant): SigningConfig {
-    // 在新的 ApplicationVariant API 中，signingConfig 是一个 Property
-    val sc = variant.signingConfig
-    
-    // 由于 SigningConfig 接口在不同版本可能略有差异，且为了避免直接依赖复杂的接口类型
-    // 我们仍然使用 Property 的 get() 来获取，但此时已经是强类型对象（或 null）
-    // 如果您希望完全无反射，则需要确保项目中引入了对应版本的 AGP 依赖进行编译
-    
     return try {
-        // 在 AGP 7/8/9 中，可以通过扩展获取具体的签名信息
-        // 这里采用最直接的方式，如果某些属性不存在，则返回空配置
-        SigningConfig(null, null, null, null) 
+        // 1. 获取 variant.signingConfig 对象 (通常是一个 Provider)
+        val scProvider = variant.signingConfig
+        val sc = if (scProvider is Provider<*>) scProvider.orNull else scProvider
+
+        if (sc == null) {
+            return SigningConfig(null, null, null, null)
+        }
+
+        // 2. 使用反射获取属性
+        val storeFile = invokeMethod(sc, "getStoreFile")?.let { result ->
+            val fileObj = if (result is Provider<*>) result.orNull else result
+            when {
+                fileObj == null -> null
+                fileObj is File -> fileObj
+                else -> {
+                    // 尝试调用 getAsFile() (针对 RegularFile 或 Directory)
+                    try {
+                        fileObj.javaClass.getMethod("getAsFile").invoke(fileObj) as? File
+                    } catch (e: Exception) {
+                        fileObj as? File
+                    }
+                }
+            }
+        }
+
+        val storePassword = unwrapString(invokeMethod(sc, "getStorePassword"))
+        val keyAlias = unwrapString(invokeMethod(sc, "getKeyAlias"))
+        val keyPassword = unwrapString(invokeMethod(sc, "getKeyPassword"))
+
+        SigningConfig(storeFile, storePassword, keyAlias, keyPassword)
     } catch (e: Exception) {
         SigningConfig(null, null, null, null)
     }
+}
+
+private fun invokeMethod(obj: Any, methodName: String): Any? {
+    return try {
+        val method = obj.javaClass.methods.find { it.name == methodName && it.parameterCount == 0 }
+        method?.invoke(obj)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun unwrapString(result: Any?): String? {
+    return if (result is Provider<*>) result.orNull as? String else result as? String
 }
