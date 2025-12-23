@@ -7,11 +7,11 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation gradleApi()
     implementation localGroovy()
-    compileOnly "com.android.tools.build:gradle:7.3.0"
+    compileOnly "com.android.tools.build:gradle:7.4.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21"
     implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21"
-    compileOnly "$GROUP_ID:aabresguard-core:$VERSION"
-    api("$GROUP_ID:aabresguard-core:$VERSION") {
+    
+    api(project(":core")) {
         exclude group: "com.google.guava", module: "guava"
         exclude group: "com.android.tools.build", module: "gradle"
     }
@@ -21,5 +21,11 @@ configurations {
     all*.exclude group: "com.android.tools.build", module: "bundletool"
 }
 
-sourceCompatibility = 11
-targetCompatibility = 11
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}

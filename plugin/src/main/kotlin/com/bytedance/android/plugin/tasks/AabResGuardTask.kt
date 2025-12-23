@@ -1,12 +1,13 @@
 package com.bytedance.android.plugin.tasks
 
-import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.api.variant.ApplicationVariant
 import com.bytedance.android.aabresguard.commands.ObfuscateBundleCommand
 import com.bytedance.android.plugin.extensions.AabResGuardExtension
 import com.bytedance.android.plugin.internal.getBundleFilePath
 import com.bytedance.android.plugin.internal.getSigningConfig
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.DefaultTask
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.logging.text.StyledTextOutput.Style
@@ -15,29 +16,20 @@ import java.io.File
 import java.nio.file.Path
 import javax.inject.Inject
 
-/**
- * Created by YangJing on 2019/10/15 .
- * Email: yangjing.yeoh@bytedance.com
- * Modified 2021/08/11
- */
 open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFactory) :
     DefaultTask() {
 
     @get:Internal
-    private lateinit var variant: ApplicationVariant
+    var variant: ApplicationVariant? = null
 
     @get:Internal
     lateinit var signingConfig: SigningConfig
 
     @get:Internal
-    var aabResGuard: AabResGuardExtension =
+    val aabResGuard: AabResGuardExtension =
         project.extensions.getByName("aabResGuard") as AabResGuardExtension
 
-    @get:Internal
-    private lateinit var bundlePath: Path
-
-    @get:Internal
-    private lateinit var obfuscatedBundlePath: Path
+    private val out = outputFactory.create("AabResGuardTask")
 
     init {
         description = "Assemble resource proguard for bundle file"
@@ -45,34 +37,36 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
         outputs.upToDateWhen { false }
     }
 
-    fun setVariantScope(variant: ApplicationVariant) {
-        this.variant = variant;
-        // init bundleFile, obfuscatedBundlePath must init before task action.
-        bundlePath = getBundleFilePath(project, variant)
-        val aabName = aabResGuard.obfuscatedBundleFileName.ifBlank {
-            "${variant.applicationId}_${variant.versionName}_${variant.versionCode}.aab"
-        }
-        obfuscatedBundlePath = File(bundlePath.toFile().parentFile, aabName).toPath()
+    fun setVariantData(variant: ApplicationVariant) {
+        this.variant = variant
     }
-
-    /*
-        @InputFile
-        @Optional
-        fun getObfuscatedBundlePath(): Path {
-            return obfuscatedBundlePath
-        }
-    */
-    private val out = outputFactory.create("AabResGuardTask")
 
     @TaskAction
     fun execute() {
+        val currentVariant = variant ?: throw RuntimeException("Variant info is missing")
+        val variantName = currentVariant.name
+        
         out.style(Style.Info).println(aabResGuard.toString())
-        // init signing config
-        signingConfig = getSigningConfig(project, variant)
-        printSignConfiguration()
-        printOutputFileLocation()
+        
+        // 获取签名配置
+        signingConfig = getSigningConfig(project, currentVariant)
+        
+        // 获取 Bundle 文件路径
+        val bundlePath = getBundleFilePath(project, currentVariant)
+        
+        val applicationId = currentVariant.applicationId.get()
+        val versionName = currentVariant.outputs.firstOrNull()?.versionName?.getOrElse("unspecified") ?: "unspecified"
+        val versionCode = currentVariant.outputs.firstOrNull()?.versionCode?.getOrElse(0) ?: 0
+        
+        val aabName = aabResGuard.obfuscatedBundleFileName.ifBlank {
+            "${applicationId}_${versionName}_${versionCode}.aab"
+        }
+        val obfuscatedBundlePath = File(bundlePath.toFile().parentFile, aabName).toPath()
 
-        prepareUnusedFile()
+        printSignConfiguration()
+        printOutputFileLocation(obfuscatedBundlePath)
+
+        prepareUnusedFile(variantName)
 
         val command = ObfuscateBundleCommand.builder()
             .setEnableObfuscate(aabResGuard.enableObfuscate)
@@ -88,6 +82,7 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setRemoveStr(aabResGuard.enableFilterStrings)
             .setUnusedStrPath(aabResGuard.unusedStringPath)
             .setLanguageWhiteList(aabResGuard.languageWhiteList)
+        
         if (aabResGuard.mappingFile != null) {
             command.setMappingPath(aabResGuard.mappingFile)
         }
@@ -101,10 +96,11 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
         command.build().execute()
     }
 
-    private fun prepareUnusedFile() {
-        val simpleName = variant.name.replace("Release", "")
-        val name = simpleName[0].toLowerCase() + simpleName.substring(1)
-        val resourcePath = "${project.buildDir}/outputs/mapping/$name/release/unused.txt"
+    private fun prepareUnusedFile(name: String) {
+        val simpleName = name.replace("Release", "", ignoreCase = true)
+        if (simpleName.isEmpty()) return
+        val lowerName = simpleName.replaceFirstChar { it.lowercase() }
+        val resourcePath = "${project.buildDir}/outputs/mapping/$lowerName/release/unused.txt"
         val usedFile = File(resourcePath)
         if (usedFile.exists()) {
             println("find unused.txt : ${usedFile.absolutePath}")
@@ -114,34 +110,19 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
                     out.style(Style.Error).println("replace unused.txt!")
                 }
             }
-        } else {
-            out.style(Style.Error).println(
-                "not exists unused.txt : ${usedFile.absolutePath}\n" +
-                        "use default path : ${aabResGuard.unusedStringPath}"
-            )
         }
     }
 
     private fun printSignConfiguration() {
         println("-------------- Sign configuration --------------")
         println("\tStoreFile:\t\t${signingConfig.storeFile}")
-        println("\tKeyPassword:\t${encrypt(signingConfig.keyPassword)}")
-        println("\tAlias:\t\t\t${encrypt(signingConfig.keyAlias)}")
-        println("\tStorePassword:\t${encrypt(signingConfig.storePassword)}")
-    }
-
-    private fun printOutputFileLocation() {
-        println("-------------- Output configuration --------------")
-        println("\tFolder:\t\t${obfuscatedBundlePath.parent}")
-        println("\tFile:\t\t${obfuscatedBundlePath.fileName}")
         println("--------------------------------------------------")
     }
 
-    private fun encrypt(value: String?): String {
-        if (value == null) return "/"
-        if (value.length > 2) {
-            return "${value.substring(0, value.length / 2)}****"
-        }
-        return "****"
+    private fun printOutputFileLocation(path: Path) {
+        println("-------------- Output configuration --------------")
+        println("\tFolder:\t\t${path.parent}")
+        println("\tFile:\t\t${path.fileName}")
+        println("--------------------------------------------------")
     }
 }
