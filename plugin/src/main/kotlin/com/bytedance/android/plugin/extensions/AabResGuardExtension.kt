@@ -9,7 +9,50 @@ import java.nio.file.Path
 open class AabResGuardExtension {
     var enableObfuscate: Boolean = true
     var mappingFile: Path? = null
-    var whiteList: Set<String>? = HashSet()
+    
+    private val defaultWhiteList = setOf(
+        "*.R.mipmap.ic_*",
+        "*.R.mipmap.logo*",
+        "*.R.string.default_web_client_id",
+        "*.R.string.firebase_database_url",
+        "*.R.string.gcm_defaultSenderId",
+        "*.R.string.google_api_key",
+        "*.R.string.google_app_id",
+        "*.R.string.google_crash_reporting_api_key",
+        "*.R.string.google_storage_bucket",
+        "*.R.string.project_id",
+        "*.R.string.com.crashlytics.android.build_id",
+        "*.R.string.com.google.firebase.crashlytics.mapping_file_id",
+        "*.R.string.tt_*",
+        "*.R.layout.tt_*",
+        "*.R.drawable.tt_*",
+        "*.R.layout.notification_*",
+        "*.R.string.star_*",
+        "*.R.dimen.tt_*",
+        "*.R.integer.tt_*",
+        "*.R.anim.tt_*",
+        "*.R.xml.tt_*",
+        "*.R.color.tt_*",
+        "*.R.style.tt_*",
+        "*.R.raw.tt_*",
+        "*.R.mipmap.tt_*",
+        "*.R.menu.tt_*",
+        "*.R.attr.tt_*",
+        "*.R.style.Theme.Dialog.TT_*",
+        "*.R.style.quick_*",
+        "*.R.style.EditTextStyle*",
+        "*.R.id.tt_*"
+    )
+
+    var whiteList: Set<String>? = HashSet(defaultWhiteList)
+        set(value) {
+            field = if (value != null) {
+                HashSet(defaultWhiteList + value)
+            } else {
+                HashSet(defaultWhiteList)
+            }
+        }
+
     var bundleMetaDataWhiteList: Set<String>? = HashSet()
     var obfuscatedBundleFileName: String = ""
     var mergeDuplicatedRes: Boolean = false
@@ -35,6 +78,6 @@ open class AabResGuardExtension {
                 "\tremoveBundleMetadata=$removeBundleMetadata\n" +
                 "\tremoveRootFiles=$removeRootFiles\n" +
                 "\tunusedStringPath=$unusedStringPath\n" +
-                "\tlanguageWhiteoolean`List=${if (languageWhiteList == null) null else languageWhiteList}\n"
+                "\tlanguageWhiteList=${if (languageWhiteList == null) null else languageWhiteList}\n"
     }
 }
