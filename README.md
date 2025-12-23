@@ -28,7 +28,7 @@ buildscript {
     google()
    }
   dependencies {
-    classpath "com.bytedance.android:aabresguard-plugin:0.1.13"
+    classpath "com.bytedance.android:aabresguard-plugin:0.1.17"
   }
 }
 ```
