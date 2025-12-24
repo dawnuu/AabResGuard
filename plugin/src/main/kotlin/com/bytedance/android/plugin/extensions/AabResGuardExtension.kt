@@ -10,7 +10,10 @@ open class AabResGuardExtension {
     var enableObfuscate: Boolean = true
     var mappingFile: Path? = null
     var useRandomName: Boolean = false
-    
+
+    // MD5 mutation config
+    var enableMutateMd5: Boolean = false
+
     private val defaultWhiteList = setOf(
         "*.R.mipmap.ic_*",
         "*.R.mipmap.logo*",
@@ -70,6 +73,7 @@ open class AabResGuardExtension {
                 "\tenableObfuscate=$enableObfuscate\n" +
                 "\tmappingFile=$mappingFile\n" +
                 "\tuseRandomName=$useRandomName\n" +
+                "\tenableMutateMd5=$enableMutateMd5\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +
                 "\tbundleMetaDataWhiteList=${if (bundleMetaDataWhiteList == null) null else bundleMetaDataWhiteList}\n" +
                 "\tobfuscatedBundleFileName=$obfuscatedBundleFileName\n" +

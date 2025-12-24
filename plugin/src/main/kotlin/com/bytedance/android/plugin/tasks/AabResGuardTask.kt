@@ -7,7 +7,6 @@ import com.bytedance.android.plugin.internal.getBundleFilePath
 import com.bytedance.android.plugin.internal.getSigningConfig
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.logging.text.StyledTextOutput.Style
@@ -45,19 +44,21 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
     fun execute() {
         val currentVariant = variant ?: throw RuntimeException("Variant info is missing")
         val variantName = currentVariant.name
-        
+
         out.style(Style.Info).println(aabResGuard.toString())
-        
+
         // 获取签名配置
         signingConfig = getSigningConfig(project, currentVariant)
-        
+
         // 获取 Bundle 文件路径
         val bundlePath = getBundleFilePath(project, currentVariant)
-        
+
         val applicationId = currentVariant.applicationId.get()
-        val versionName = currentVariant.outputs.firstOrNull()?.versionName?.getOrElse("unspecified") ?: "unspecified"
+        val versionName =
+            currentVariant.outputs.firstOrNull()?.versionName?.getOrElse("unspecified")
+                ?: "unspecified"
         val versionCode = currentVariant.outputs.firstOrNull()?.versionCode?.getOrElse(0) ?: 0
-        
+
         val aabName = aabResGuard.obfuscatedBundleFileName.ifBlank {
             "${applicationId}_${versionName}_${versionCode}.aab"
         }
@@ -83,7 +84,8 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setUnusedStrPath(aabResGuard.unusedStringPath)
             .setLanguageWhiteList(aabResGuard.languageWhiteList)
             .setUseRandomName(aabResGuard.useRandomName)
-        
+            .setEnableMutateMd5(aabResGuard.enableMutateMd5)
+
         if (aabResGuard.mappingFile != null) {
             command.setMappingPath(aabResGuard.mappingFile)
         }

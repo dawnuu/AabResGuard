@@ -1,12 +1,18 @@
 package com.bytedance.android.aabresguard.executors;
 
+import static com.bytedance.android.aabresguard.bundle.AppBundleUtils.getEntryNameByResourceName;
+import static com.bytedance.android.aabresguard.bundle.AppBundleUtils.getTypeNameByResourceName;
+import static com.bytedance.android.aabresguard.bundle.ResourcesTableOperation.updateEntryConfigValueList;
+import static com.bytedance.android.aabresguard.utils.FileOperation.getFilePrefixByFileName;
+import static com.bytedance.android.aabresguard.utils.FileOperation.getNameFromZipFilePath;
+import static com.bytedance.android.aabresguard.utils.FileOperation.getParentFromZipFilePath;
+
 import com.android.aapt.Resources;
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.android.tools.build.bundletool.model.BundleModule;
 import com.android.tools.build.bundletool.model.BundleModuleName;
 import com.android.tools.build.bundletool.model.InMemoryModuleEntry;
 import com.android.tools.build.bundletool.model.ModuleEntry;
-import com.android.tools.build.bundletool.model.ResourceTableEntry;
 import com.android.tools.build.bundletool.model.ZipPath;
 import com.android.tools.build.bundletool.model.utils.ResourcesUtils;
 import com.bytedance.android.aabresguard.bundle.AppBundleUtils;
@@ -40,14 +46,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
-import static com.bytedance.android.aabresguard.bundle.AppBundleUtils.getEntryNameByResourceName;
-import static com.bytedance.android.aabresguard.bundle.AppBundleUtils.getTypeNameByResourceName;
-import static com.bytedance.android.aabresguard.bundle.ResourcesTableOperation.checkConfiguration;
-import static com.bytedance.android.aabresguard.bundle.ResourcesTableOperation.updateEntryConfigValueList;
-import static com.bytedance.android.aabresguard.utils.FileOperation.getFilePrefixByFileName;
-import static com.bytedance.android.aabresguard.utils.FileOperation.getNameFromZipFilePath;
-import static com.bytedance.android.aabresguard.utils.FileOperation.getParentFromZipFilePath;
-
 /**
  * Created by YangJing on 2019/10/14 .
  * Email: yangjing.yeoh@bytedance.com
@@ -62,11 +60,36 @@ public class ResourcesObfuscator {
     private final Path outputMappingPath;
     private final ZipFile bundleZipFile;
     private final boolean useRandomName;
+    private final boolean enableMutateMd5;
     private final ResGuardStringBuilder mResGuardStringBuilder;
     private ResourcesMapping resourcesMapping;
     private final Random random = new Random();
 
-    public ResourcesObfuscator(Path bundlePath, AppBundle rawAppBundle, Set<String> whiteListRules, Path outputLogLocationDir, Path mappingPath, boolean useRandomName) throws IOException {
+    // 允许修改 MD5 的媒体文件后缀
+    private static final Set<String> MEDIA_EXTENSIONS = new HashSet<>();
+
+    static {
+        // 图片
+        MEDIA_EXTENSIONS.add("png");
+        MEDIA_EXTENSIONS.add("jpg");
+        MEDIA_EXTENSIONS.add("jpeg");
+        MEDIA_EXTENSIONS.add("webp");
+        MEDIA_EXTENSIONS.add("gif");
+        MEDIA_EXTENSIONS.add("bmp");
+        // 音频
+        MEDIA_EXTENSIONS.add("mp3");
+        MEDIA_EXTENSIONS.add("wav");
+        MEDIA_EXTENSIONS.add("ogg");
+        MEDIA_EXTENSIONS.add("m4a");
+        MEDIA_EXTENSIONS.add("aac");
+        // 视频
+        MEDIA_EXTENSIONS.add("mp4");
+        MEDIA_EXTENSIONS.add("webm");
+        MEDIA_EXTENSIONS.add("mkv");
+        MEDIA_EXTENSIONS.add("avi");
+    }
+
+    public ResourcesObfuscator(Path bundlePath, AppBundle rawAppBundle, Set<String> whiteListRules, Path outputLogLocationDir, Path mappingPath, boolean useRandomName, boolean enableMutateMd5) throws IOException {
         if (mappingPath != null && mappingPath.toFile().exists()) {
             resourcesMapping = new ResourcesMappingParser(mappingPath).parse();
         } else {
@@ -84,8 +107,9 @@ public class ResourcesObfuscator {
         this.rawAppBundle = rawAppBundle;
         this.whiteListRules = whiteListRules;
         this.useRandomName = useRandomName;
+        this.enableMutateMd5 = enableMutateMd5;
 
-        // 【关键】初始化全局唯一字典生成器，防止多次 reset 导致随机结果不一致
+        // 全局唯一字典生成器
         this.mResGuardStringBuilder = new ResGuardStringBuilder();
         this.mResGuardStringBuilder.reset(null, useRandomName);
     }
@@ -138,7 +162,6 @@ public class ResourcesObfuscator {
         if (!bundleModule.getResourceTable().isPresent()) return;
 
         Resources.ResourceTable table = bundleModule.getResourceTable().get();
-        // 1. 映射目录
         ResourcesUtils.getAllFileReferences(table)
                 .stream()
                 .map(ZipPath::getParent)
@@ -149,7 +172,6 @@ public class ResourcesObfuscator {
                     resourcesMapping.putDirMapping(path.toString(), BundleModule.RESOURCES_DIRECTORY.toString() + "/" + name);
                 });
 
-        // 2. 映射 Entry
         ResourcesUtils.entries(table).forEach(entry -> {
             String resourceId = entry.getResourceId().toString();
             String resourceName = AppBundleUtils.getResourceFullName(entry);
@@ -208,6 +230,10 @@ public class ResourcesObfuscator {
             String obfuscatedPath = obfuscatedEntryMap.get(bundleRawPath);
             if (obfuscatedPath != null) {
                 byte[] data = AppBundleUtils.readByte(bundleZipFile, entry, bundleModule);
+                // 只有图片、音视频等媒体文件才修改 MD5
+                if (enableMutateMd5 && isMediaFile(bundleRawPath)) {
+                    data = mutateData(data);
+                }
                 obfuscateEntries.add(InMemoryModuleEntry.ofFile(obfuscatedPath, data));
             } else {
                 obfuscateEntries.add(entry);
@@ -219,12 +245,27 @@ public class ResourcesObfuscator {
         return builder.build();
     }
 
+    private boolean isMediaFile(String path) {
+        if (path == null || !path.contains(".")) return false;
+        String extension = path.substring(path.lastIndexOf(".") + 1).toLowerCase();
+        return MEDIA_EXTENSIONS.contains(extension);
+    }
+
+    private byte[] mutateData(byte[] data) {
+        if (data == null || data.length == 0) return data;
+        byte[] newData = new byte[data.length + 1];
+        System.arraycopy(data, 0, newData, 0, data.length);
+        newData[data.length] = (byte) (random.nextInt(256));
+        return newData;
+    }
+
     private Resources.ResourceTable obfuscateResourceTable(BundleModule bundleModule, Map<String, String> obfuscatedEntryMap) {
         if (!bundleModule.getResourceTable().isPresent()) return null;
         Resources.ResourceTable resourceTable = bundleModule.getResourceTable().get();
         ResourcesTableBuilder resourcesTableBuilder = new ResourcesTableBuilder();
         ResourcesUtils.entries(resourceTable).forEach(entry -> {
             String resourceName = AppBundleUtils.getResourceFullName(entry);
+            String resourceId = entry.getResourceId().toString();
             String obfuscatedResName = resourcesMapping.getResourceMapping().get(resourceName);
             Resources.Entry obfuscatedEntry = entry.getEntry();
             if (obfuscatedResName != null) {
@@ -248,14 +289,16 @@ public class ResourcesObfuscator {
 
     private void checkResMappingRules() {
         resourcesMapping.getDirMapping().values().stream().map(ZipPath::create).forEach(path -> {
-            if (!path.startsWith(BundleModule.RESOURCES_DIRECTORY)) throw new IllegalArgumentException("Invalid mapping obfuscation rule: " + path);
+            if (!path.startsWith(BundleModule.RESOURCES_DIRECTORY))
+                throw new IllegalArgumentException("Invalid mapping obfuscation rule: " + path);
         });
     }
 
     private boolean shouldBeObfuscated(String resourceName) {
         if (resourceName.startsWith(RESOURCE_ANDROID_PREFIX)) return false;
         for (String rule : whiteListRules) {
-            if (Pattern.compile(Utils.convertToPatternString(rule)).matcher(resourceName).matches()) return false;
+            if (Pattern.compile(Utils.convertToPatternString(rule)).matcher(resourceName).matches())
+                return false;
         }
         return true;
     }
