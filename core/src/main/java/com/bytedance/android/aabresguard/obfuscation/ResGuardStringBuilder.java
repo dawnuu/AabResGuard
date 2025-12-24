@@ -4,6 +4,7 @@ import com.bytedance.android.aabresguard.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,6 +48,10 @@ public class ResGuardStringBuilder {
     }
 
     public void reset(HashSet<Pattern> blacklistPatterns) {
+        reset(blacklistPatterns, false);
+    }
+
+    public void reset(HashSet<Pattern> blacklistPatterns, boolean useRandomName) {
         mReplaceStringBuffer.clear();
         mIsReplaced.clear();
         mIsWhiteList.clear();
@@ -75,6 +80,10 @@ public class ResGuardStringBuilder {
                     }
                 }
             }
+        }
+
+        if (useRandomName) {
+            Collections.shuffle(mReplaceStringBuffer);
         }
     }
 

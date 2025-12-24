@@ -233,7 +233,7 @@ public abstract class ObfuscateBundleCommand {
             if (getMappingPath().isPresent()) {
                 mappingPath = getMappingPath().get();
             }
-            ResourcesObfuscator obfuscator = new ResourcesObfuscator(getBundlePath(), appBundle, getWhiteList(), getOutputPath().getParent(), mappingPath);
+            ResourcesObfuscator obfuscator = new ResourcesObfuscator(getBundlePath(), appBundle, getWhiteList(), getOutputPath().getParent(), mappingPath, getUseRandomName().orElse(false));
             appBundle = obfuscator.obfuscate();
         }
 
@@ -316,6 +316,8 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Set<String> getBundleMetaDataWhiteList();
 
+    public abstract Optional<Boolean> getUseRandomName();
+
 
     @AutoValue.Builder
     public abstract static class Builder {
@@ -356,6 +358,8 @@ public abstract class ObfuscateBundleCommand {
         public abstract Builder setKeyAlias(String keyAlias);
 
         public abstract Builder setKeyPassword(String keyPassword);
+
+        public abstract Builder setUseRandomName(Boolean useRandomName);
 
         abstract ObfuscateBundleCommand autoBuild();
 

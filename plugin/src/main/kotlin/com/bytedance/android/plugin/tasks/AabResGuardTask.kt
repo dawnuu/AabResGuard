@@ -82,6 +82,7 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setRemoveStr(aabResGuard.enableFilterStrings)
             .setUnusedStrPath(aabResGuard.unusedStringPath)
             .setLanguageWhiteList(aabResGuard.languageWhiteList)
+            .setUseRandomName(aabResGuard.useRandomName)
         
         if (aabResGuard.mappingFile != null) {
             command.setMappingPath(aabResGuard.mappingFile)

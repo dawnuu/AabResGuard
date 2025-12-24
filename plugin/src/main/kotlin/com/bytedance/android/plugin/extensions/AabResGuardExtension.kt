@@ -9,6 +9,7 @@ import java.nio.file.Path
 open class AabResGuardExtension {
     var enableObfuscate: Boolean = true
     var mappingFile: Path? = null
+    var useRandomName: Boolean = false
     
     private val defaultWhiteList = setOf(
         "*.R.mipmap.ic_*",
@@ -68,6 +69,7 @@ open class AabResGuardExtension {
         return "-------------- AabResGuardExtension --------------\n" +
                 "\tenableObfuscate=$enableObfuscate\n" +
                 "\tmappingFile=$mappingFile\n" +
+                "\tuseRandomName=$useRandomName\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +
                 "\tbundleMetaDataWhiteList=${if (bundleMetaDataWhiteList == null) null else bundleMetaDataWhiteList}\n" +
                 "\tobfuscatedBundleFileName=$obfuscatedBundleFileName\n" +
