@@ -14,6 +14,10 @@ open class AabResGuardExtension {
     // MD5 mutation config
     var enableMutateMd5: Boolean = false
 
+    // VirusTotal upload config
+    var enableVirusTotalUpload: Boolean = false
+    var virusTotalApiKey: String = ""
+
     private val defaultWhiteList = setOf(
         "*.R.mipmap.ic_*",
         "*.R.mipmap.logo*",
@@ -74,15 +78,12 @@ open class AabResGuardExtension {
                 "\tmappingFile=$mappingFile\n" +
                 "\tuseRandomName=$useRandomName\n" +
                 "\tenableMutateMd5=$enableMutateMd5\n" +
+                "\tenableVirusTotalUpload=$enableVirusTotalUpload\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +
-                "\tbundleMetaDataWhiteList=${if (bundleMetaDataWhiteList == null) null else bundleMetaDataWhiteList}\n" +
                 "\tobfuscatedBundleFileName=$obfuscatedBundleFileName\n" +
                 "\tmergeDuplicatedRes=$mergeDuplicatedRes\n" +
                 "\tenableFilterFiles=$enableFilterFiles\n" +
-                "\tfilterList=${if (filterList == null) null else filterList}\n" +
                 "\tenableFilterStrings=$enableFilterStrings\n" +
-                "\tremoveBundleMetadata=$removeBundleMetadata\n" +
-                "\tremoveRootFiles=$removeRootFiles\n" +
                 "\tunusedStringPath=$unusedStringPath\n" +
                 "\tlanguageWhiteList=${if (languageWhiteList == null) null else languageWhiteList}\n"
     }

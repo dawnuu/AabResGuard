@@ -85,6 +85,8 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setLanguageWhiteList(aabResGuard.languageWhiteList)
             .setUseRandomName(aabResGuard.useRandomName)
             .setEnableMutateMd5(aabResGuard.enableMutateMd5)
+            .setVirusTotalApiKey(aabResGuard.virusTotalApiKey)
+            .setEnableVirusTotalUpload(aabResGuard.enableVirusTotalUpload)
 
         if (aabResGuard.mappingFile != null) {
             command.setMappingPath(aabResGuard.mappingFile)

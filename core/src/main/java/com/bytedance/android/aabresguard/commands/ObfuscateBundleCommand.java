@@ -22,6 +22,7 @@ import com.bytedance.android.aabresguard.model.xml.AabResGuardConfig;
 import com.bytedance.android.aabresguard.parser.AabResGuardXmlParser;
 import com.bytedance.android.aabresguard.utils.FileOperation;
 import com.bytedance.android.aabresguard.utils.TimeClock;
+import com.bytedance.android.aabresguard.utils.VirusTotalUploader;
 import com.google.auto.value.AutoValue;
 
 import org.dom4j.DocumentException;
@@ -227,6 +228,7 @@ public abstract class ObfuscateBundleCommand {
             DuplicatedResourcesMerger merger = new DuplicatedResourcesMerger(getBundlePath(), appBundle, getOutputPath().getParent());
             appBundle = merger.merge();
         }
+
         // obfuscate bundle
         if (getEnableObfuscate()) {
             Path mappingPath = null;
@@ -240,7 +242,8 @@ public abstract class ObfuscateBundleCommand {
                     getOutputPath().getParent(),
                     mappingPath,
                     getUseRandomName().orElse(false),
-                    getEnableMutateMd5().orElse(false));
+                    getEnableMutateMd5().orElse(false)
+            );
             appBundle = obfuscator.obfuscate();
         }
 
@@ -268,6 +271,12 @@ public abstract class ObfuscateBundleCommand {
                 ));
             });
             signer.execute();
+        }
+
+        // VirusTotal Upload - 明确在此处调用
+        if (getEnableVirusTotalUpload().orElse(false)) {
+            System.out.println(">>> VirusTotal Upload is ENABLED. Starting upload...");
+            VirusTotalUploader.upload(getVirusTotalApiKey().orElse(""), getOutputPath().toFile());
         }
 
         long rawSize = FileOperation.getFileSizes(getBundlePath().toFile());
@@ -327,6 +336,11 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Optional<Boolean> getEnableMutateMd5();
 
+    public abstract Optional<Boolean> getEnableVirusTotalUpload();
+
+    public abstract Optional<String> getVirusTotalApiKey();
+
+
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder setBundleMetaDataWhiteList(Set<String> whiteList);
@@ -370,6 +384,10 @@ public abstract class ObfuscateBundleCommand {
         public abstract Builder setUseRandomName(Boolean useRandomName);
 
         public abstract Builder setEnableMutateMd5(Boolean enableMutateMd5);
+
+        public abstract Builder setEnableVirusTotalUpload(Boolean enable);
+
+        public abstract Builder setVirusTotalApiKey(String apiKey);
 
         abstract ObfuscateBundleCommand autoBuild();
 
