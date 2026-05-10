@@ -1,4 +1,4 @@
-apply plugin: 'digital.wup.android-maven-publish'
+apply plugin: 'maven-publish'
 
 task sourcesJar(type: Jar) {
     from sourceSets.main.java.srcDirs
@@ -27,9 +27,8 @@ publishing {
         }
     }
 
-    publications {
-        Plugin(MavenPublication) {
-            from components.java
+    publications.withType(MavenPublication).configureEach {
+        if (name == 'pluginMaven') {
             artifact sourcesJar
             artifact javadocJar
 
