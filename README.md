@@ -19,7 +19,33 @@
 
 ### Gradle plugin
 
-在 `build.gradle(root project)` 中进行配置
+推荐使用 Gradle plugins DSL 接入。在 `gradle/libs.versions.toml` 中声明：
+
+```toml
+[versions]
+aabresguard = "0.1.21"
+
+[plugins]
+aabresguard = { id = "com.bytedance.android.aabResGuard", version.ref = "aabresguard" }
+```
+
+在 `build.gradle(root project)` 中声明插件版本：
+
+```gradle
+plugins {
+  alias(libs.plugins.aabresguard) apply false
+}
+```
+
+在 `build.gradle(application)` 中启用插件：
+
+```gradle
+plugins {
+  alias(libs.plugins.aabresguard)
+}
+```
+
+也可以继续使用旧版 `buildscript` 方式接入：
 
 ```gradle
 buildscript {
