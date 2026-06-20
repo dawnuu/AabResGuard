@@ -213,11 +213,52 @@ configure<AabResGuardExtension> {
     unusedStringPath = file("unused.txt").toPath()
 
     // 保留 en,en-xx,zh,zh-xx 等语言，其余均删除（可选）
-    languageWhiteList = setOf("en", "zh")
+    languageWhiteList = ["en", "zh"]
 }
 ```
 
-#### 3. 执行混淆
+#### 3. 内置白名单
+
+插件内置了以下白名单规则，无需手动配置，自动生效：
+
+```kotlin
+// 内置白名单（自定义白名单会与之合并）
+"*.R.mipmap.ic_*",                // 应用图标
+"*.R.mipmap.logo*",               // Logo
+"*.R.string.default_web_client_id",
+"*.R.string.firebase_database_url",
+"*.R.string.gcm_defaultSenderId",
+"*.R.string.google_api_key",
+"*.R.string.google_app_id",
+"*.R.string.google_crash_reporting_api_key",
+"*.R.string.google_storage_bucket",
+"*.R.string.project_id",
+"*.R.string.com.crashlytics.android.build_id",
+"*.R.string.com.google.firebase.crashlytics.mapping_file_id",
+"*.R.string.tt_*",                // 抖音相关
+"*.R.layout.tt_*",
+"*.R.drawable.tt_*",
+"*.R.layout.notification_*",      // 通知栏布局
+"*.R.string.star_*",
+"*.R.dimen.tt_*",
+"*.R.integer.tt_*",
+"*.R.anim.tt_*",
+"*.R.xml.tt_*",
+"*.R.color.tt_*",
+"*.R.style.tt_*",
+"*.R.raw.tt_*",
+"*.R.mipmap.tt_*",
+"*.R.menu.tt_*",
+"*.R.attr.tt_*",
+"*.R.style.Theme.Dialog.TT_*",
+"*.R.style.quick_*",
+"*.R.style.EditTextStyle*",
+"*.R.id.tt_*"
+```
+
+> 内置白名单主要覆盖三类资源：**应用图标**、**第三方 SDK 关键配置**（Firebase、Crashlytics 等）、**抖音业务相关资源**。
+
+#### 4. 执行混淆
 
 `aabResGuard plugin` 侵入了 `bundle` 打包流程，可以直接执行原始打包命令进行混淆（默认仅处理 Release 变体）：
 
@@ -227,13 +268,22 @@ configure<AabResGuardExtension> {
 
 混淆完成后会输出混淆前后的包体积对比。
 
-#### 4. 获取混淆产物路径
+#### 5. 获取混淆产物路径
 
 通过 Gradle Task API 获取混淆后的 bundle 文件路径：
+
+**Groovy DSL：**
 
 ```groovy
 def aabResGuardPlugin = project.tasks.getByName("aabresguardRelease")
 Path bundlePath = aabResGuardPlugin.getObfuscatedBundlePath()
+```
+
+**Kotlin DSL（.kts）：**
+
+```kotlin
+val aabResGuardPlugin = project.tasks.getByName("aabresguardRelease")
+val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 ```
 
 ---
