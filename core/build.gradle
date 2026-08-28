@@ -2,6 +2,7 @@ apply plugin: 'java-library'
 apply plugin: "com.google.protobuf"
 apply plugin: "com.gradleup.shadow"
 apply from: rootProject.file('gradle/publish_core.gradle')
+apply from: rootProject.file('gradle/publish_common.gradle')
 
 [compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
 

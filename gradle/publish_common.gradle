@@ -1,0 +1,67 @@
+apply plugin: 'signing'
+
+def resolvePublishingValue = { String propertyName, String environmentName ->
+    def projectValue = rootProject.findProperty(propertyName)
+    if (projectValue != null && projectValue.toString().trim()) {
+        return projectValue.toString()
+    }
+    def systemValue = System.getProperty(propertyName)
+    if (systemValue != null && systemValue.trim()) {
+        return systemValue
+    }
+    def environmentValue = System.getenv(environmentName)
+    if (environmentValue != null && environmentValue.trim()) {
+        return environmentValue
+    }
+    return null
+}
+
+def centralRelease = (resolvePublishingValue('centralRelease', 'MAVEN_CENTRAL_RELEASE') ?: 'false').toBoolean()
+def signingKey = resolvePublishingValue('signingKey', 'MAVEN_CENTRAL_SIGNING_KEY')
+def signingPassword = resolvePublishingValue('signingPassword', 'MAVEN_CENTRAL_SIGNING_PASSWORD')
+
+def projectName = project.name == 'core' ? 'AabResGuard Core' : 'AabResGuard Gradle Plugin'
+def projectDescription = project.name == 'core'
+        ? 'The core command-line tool for obfuscating Android App Bundle resources.'
+        : 'Gradle plugin for obfuscating Android App Bundle resources.'
+
+afterEvaluate {
+    publishing.publications.withType(MavenPublication).configureEach {
+        pom {
+            name = projectName
+            description = projectDescription
+            url = 'https://github.com/dawnuu/AabResGuard'
+            licenses {
+                license {
+                    name = 'Apache License, Version 2.0'
+                    url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution = 'repo'
+                }
+            }
+            developers {
+                developer {
+                    id = 'dawnuu'
+                    name = 'Dawn'
+                    email = 'dawnuu@126.com'
+                }
+            }
+            scm {
+                connection = 'scm:git:git://github.com/dawnuu/AabResGuard.git'
+                developerConnection = 'scm:git:ssh://git@github.com/dawnuu/AabResGuard.git'
+                url = 'https://github.com/dawnuu/AabResGuard'
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    signing {
+        required { centralRelease }
+        if (signingKey != null && signingPassword != null) {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+        } else if (centralRelease) {
+            useGpgCmd()
+        }
+        sign publishing.publications
+    }
+}

@@ -23,7 +23,8 @@ publishing {
 //            allowInsecureProtocol true
 //        }
         maven {
-            url '../../../maven/gradle'
+            name = 'localBuild'
+            url = rootProject.file('build/maven')
         }
     }
 

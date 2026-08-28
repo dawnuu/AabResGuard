@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
@@ -29,4 +31,95 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+def centralVersion = VERSION.toString()
+def centralGroupPath = GROUP_ID.toString().replace('.', '/')
+def centralPluginId = PLUGIN_ID.toString()
+def centralArtifactCoordinates = [
+        [groupPath: centralGroupPath, artifactId: 'aabresguard-core'],
+        [groupPath: centralGroupPath, artifactId: 'aabresguard-plugin'],
+        [groupPath: centralPluginId.replace('.', '/'), artifactId: "${centralPluginId}.gradle.plugin"]
+]
+def localMavenRepository = file("${System.getProperty('user.home')}/.m2/repository")
+
+def centralReleaseEnabled = {
+    def value = findProperty('centralRelease') ?: System.getProperty('centralRelease') ?: System.getenv('MAVEN_CENTRAL_RELEASE')
+    value?.toString()?.toBoolean() ?: false
+}
+
+def centralArtifactDirectories = {
+    centralArtifactCoordinates.collect { coordinates ->
+        file("${localMavenRepository}/${coordinates.groupPath}/${coordinates.artifactId}/${centralVersion}")
+    }
+}
+
+def centralChecksumCandidates = { File artifactDirectory ->
+    artifactDirectory.listFiles()?.findAll { File artifactFile ->
+        artifactFile.isFile()
+                && !artifactFile.name.endsWith('.module')
+                && !artifactFile.name.endsWith('.asc')
+                && !artifactFile.name.endsWith('.md5')
+                && !artifactFile.name.endsWith('.sha1')
+                && !artifactFile.name.endsWith('.sha256')
+                && !artifactFile.name.endsWith('.sha512')
+                && !artifactFile.name.startsWith('maven-metadata')
+    } ?: []
+}
+
+def writeChecksum = { File artifactFile, String algorithm, String extension ->
+    MessageDigest digest = MessageDigest.getInstance(algorithm)
+    artifactFile.withInputStream { inputStream ->
+        byte[] buffer = new byte[8192]
+        int readCount = inputStream.read(buffer)
+        while (readCount >= 0) {
+            if (readCount > 0) {
+                digest.update(buffer, 0, readCount)
+            }
+            readCount = inputStream.read(buffer)
+        }
+    }
+    String checksum = digest.digest().collect { byteValue ->
+        String.format('%02x', byteValue & 0xff)
+    }.join()
+    file("${artifactFile.absolutePath}.${extension}").text = checksum + System.lineSeparator()
+}
+
+tasks.register('generateCentralChecksums') {
+    dependsOn(':core:publishToMavenLocal', ':plugin:publishToMavenLocal')
+    doLast {
+        if (!centralReleaseEnabled()) {
+            throw new GradleException('Set -PcentralRelease=true before creating a Maven Central bundle.')
+        }
+        centralArtifactDirectories().each { artifactDirectory ->
+            if (!artifactDirectory.isDirectory()) {
+                throw new GradleException("Missing local publication directory: ${artifactDirectory}")
+            }
+            centralChecksumCandidates(artifactDirectory).each { artifactFile ->
+                writeChecksum(artifactFile, 'MD5', 'md5')
+                writeChecksum(artifactFile, 'SHA-1', 'sha1')
+                writeChecksum(artifactFile, 'SHA-256', 'sha256')
+                writeChecksum(artifactFile, 'SHA-512', 'sha512')
+            }
+            def unsignedFiles = centralChecksumCandidates(artifactDirectory).findAll { artifactFile ->
+                !file("${artifactFile.absolutePath}.asc").isFile()
+            }
+            if (!unsignedFiles.isEmpty()) {
+                throw new GradleException("Missing GPG signatures in ${artifactDirectory}: ${unsignedFiles*.name.join(', ')}")
+            }
+        }
+    }
+}
+
+tasks.register('centralPortalBundle', Zip) {
+    dependsOn('generateCentralChecksums')
+    archiveFileName = "aabresguard-${centralVersion}-central-bundle.zip"
+    destinationDirectory = layout.buildDirectory.dir('central')
+    centralArtifactCoordinates.each { coordinates ->
+        from({ file("${localMavenRepository}/${coordinates.groupPath}/${coordinates.artifactId}/${centralVersion}") }) {
+            into("${coordinates.groupPath}/${coordinates.artifactId}/${centralVersion}")
+            include('*.jar', '*.pom', '*.asc', '*.md5', '*.sha1', '*.sha256', '*.sha512')
+            exclude('*.module*')
+        }
+    }
 }

@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
+
 > 本工具由字节跳动抖音 Android 团队提供。
 
 ## 特性
@@ -33,10 +35,10 @@ AabResGuard 提供两种接入方式：
 
 ```toml
 [versions]
-aabresguard = "0.1.21"
+aabresguard = "1.0.0"
 
 [plugins]
-aabresguard = { id = "com.bytedance.android.aabResGuard", version.ref = "aabresguard" }
+aabresguard = { id = "io.github.dawnuu.aabresguard", version.ref = "aabresguard" }
 ```
 
 `libs.versions.toml` 不区分 Groovy/Kotlin DSL，两者共用。
@@ -107,7 +109,7 @@ plugins {
 >     maven { url "https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/" }
 >   }
 >   dependencies {
->     classpath "com.bytedance.android:aabresguard-plugin:0.1.21"
+>     classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"
 >   }
 > }
 > ```
@@ -122,7 +124,7 @@ plugins {
 >     maven("https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/")
 >   }
 >   dependencies {
->     classpath("com.bytedance.android:aabresguard-plugin:0.1.21")
+>     classpath("io.github.dawnuu:aabresguard-plugin:1.0.0")
 >   }
 > }
 > ```
@@ -294,7 +296,7 @@ val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 
 #### 1. 下载
 
-从 [Releases](https://github.com/bytedance/AabResGuard/releases) 下载最新的 `AabResGuard-x.x.x.jar`。
+从 [Releases](https://github.com/dawnuu/AabResGuard/releases) 下载最新的 `AabResGuard-x.x.x.jar`。
 
 #### 2. 准备配置文件
 

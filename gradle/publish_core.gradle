@@ -16,12 +16,14 @@ publishing {
         Core(MavenPublication) { publication ->
             project.shadow.component(publication)
             groupId GROUP_ID
+
             artifactId ARTIFACT_ID
             version VERSION
 
             artifact sourcesJar
             artifact javadocJar
         }
+
     }
 
     repositories {
@@ -34,7 +36,8 @@ publishing {
 //            allowInsecureProtocol true
 //        }
         maven {
-            url '../../../maven/gradle'
+            name = 'localBuild'
+            url = rootProject.file('build/maven')
         }
     }
 }

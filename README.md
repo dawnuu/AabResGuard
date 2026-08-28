@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
+
 > This tool was provided by ByteDance's Douyin Android team.
 
 AabResGuard obfuscates resources in Android App Bundle (`.aab`) files.
@@ -24,10 +26,10 @@ Declare the plugin in `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
-aabresguard = "0.1.21"
+aabresguard = "1.0.0"
 
 [plugins]
-aabresguard = { id = "com.bytedance.android.aabResGuard", version.ref = "aabresguard" }
+aabresguard = { id = "io.github.dawnuu.aabresguard", version.ref = "aabresguard" }
 ```
 
 Configure the repository and plugin in the root project:
@@ -55,7 +57,7 @@ plugins {
 }
 ```
 
-Groovy DSL uses the same `plugins` blocks, with `maven { url "..." }`. The legacy alternative is `classpath "com.bytedance.android:aabresguard-plugin:0.1.21"` followed by applying the plugin in the application module.
+Groovy DSL uses the same `plugins` blocks, with `maven { url "..." }`. The legacy alternative is `classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"` followed by applying the plugin in the application module.
 
 ### Plugin configuration
 
@@ -113,7 +115,7 @@ val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 
 ### Command-line tool
 
-Download the latest `AabResGuard-x.x.x.jar` from [Releases](https://github.com/bytedance/AabResGuard/releases). Create an XML configuration file:
+Download the latest `AabResGuard-x.x.x.jar` from [Releases](https://github.com/dawnuu/AabResGuard/releases). Create an XML configuration file:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
