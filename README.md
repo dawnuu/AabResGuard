@@ -4,6 +4,8 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
+The published artifacts are available from Maven Central.
+
 > This tool was provided by ByteDance's Douyin Android team.
 
 AabResGuard obfuscates resources in Android App Bundle (`.aab`) files.
@@ -44,7 +46,6 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
-    maven("https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/")
   }
 }
 ```
@@ -57,7 +58,7 @@ plugins {
 }
 ```
 
-Groovy DSL uses the same `plugins` blocks, with `maven { url "..." }`. The legacy alternative is `classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"` followed by applying the plugin in the application module.
+Groovy DSL uses the same `plugins` blocks in `build.gradle`. The legacy alternative is `classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"` followed by applying the plugin in the application module.
 
 ### Plugin configuration
 

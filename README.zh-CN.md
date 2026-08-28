@@ -4,6 +4,8 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
+当前版本已发布到 Maven Central，可直接使用 `io.github.dawnuu:aabresguard-plugin:1.0.0`。
+
 > 本工具由字节跳动抖音 Android 团队提供。
 
 ## 特性
@@ -57,7 +59,6 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
-    maven { url "https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/" }
   }
 }
 ```
@@ -84,7 +85,6 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
-    maven("https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/")
   }
 }
 ```
@@ -106,7 +106,6 @@ plugins {
 >   repositories {
 >     mavenCentral()
 >     google()
->     maven { url "https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/" }
 >   }
 >   dependencies {
 >     classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"
@@ -121,7 +120,6 @@ plugins {
 >   repositories {
 >     mavenCentral()
 >     google()
->     maven("https://raw.githubusercontent.com/dawnuu/maven/refs/heads/main/gradle/")
 >   }
 >   dependencies {
 >     classpath("io.github.dawnuu:aabresguard-plugin:1.0.0")
