@@ -4,7 +4,29 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
+> **v1.0.0 迁移说明：** 从 1.0.0 之前的版本升级时，需要更新仓库、插件 ID 和旧版依赖，具体如下。源代码中的 Java/Kotlin 包名无需修改。
+>
+> | 项目 | 1.0.0 之前 | v1.0.0 |
+> | --- | --- | --- |
+> | 仓库 | 自定义 Maven 仓库 | mavenCentral() |
+> | Plugins DSL ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
+> | 旧版依赖 | com.bytedance.android:aabresguard-plugin:0.1.x | io.github.dawnuu:aabresguard-plugin:1.0.0 |
+> | 旧版 apply ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
+
 当前版本已发布到 Maven Central，可直接使用 `io.github.dawnuu:aabresguard-plugin:1.0.0`。
+
+## Maven Central 发布
+
+项目提供 `centralPortalUpload` 任务，用于生成并上传签名后的 bundle 到 Maven Central。默认 Deployment 名为 `aabresguard-1.0.0`，可以通过 `-PcentralDeploymentName` 自定义。
+
+```sh
+./gradlew centralPortalUpload \
+  -PcentralRelease=true \
+  -PcentralDeploymentName="AabResGuard 1.0.0" \
+  -PcentralPublishingType=USER_MANAGED
+```
+
+任务会从 Gradle 用户属性读取 `mavenCentralUsername` 和 `mavenCentralPassword`，也支持从环境变量读取 `MAVEN_CENTRAL_USERNAME` 和 `MAVEN_CENTRAL_PASSWORD`。如需自动发布，可设置 `-PcentralPublishingType=AUTOMATIC`。
 
 > 本工具由字节跳动抖音 Android 团队提供。
 

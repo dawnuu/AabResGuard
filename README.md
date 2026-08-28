@@ -4,7 +4,29 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
+> **Migration note for v1.0.0:** If you are upgrading from a pre-1.0.0 version, update the repository, plugin ID, and legacy dependency as shown below. Java/Kotlin package names in your source code do not need to change.
+>
+> | Item | Before v1.0.0 | v1.0.0 |
+> | --- | --- | --- |
+> | Repository | Custom Maven repository | mavenCentral() |
+> | Plugins DSL ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
+> | Legacy dependency | com.bytedance.android:aabresguard-plugin:0.1.x | io.github.dawnuu:aabresguard-plugin:1.0.0 |
+> | Legacy apply ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
+
 The current release is published to Maven Central. You can use the Gradle plugin directly with `io.github.dawnuu:aabresguard-plugin:1.0.0`.
+
+## Maven Central Deployment
+
+The project provides a `centralPortalUpload` task that creates and uploads the signed bundle to Maven Central. The default Deployment name is `aabresguard-1.0.0`; customize it with `-PcentralDeploymentName`.
+
+```sh
+./gradlew centralPortalUpload \
+  -PcentralRelease=true \
+  -PcentralDeploymentName="AabResGuard 1.0.0" \
+  -PcentralPublishingType=USER_MANAGED
+```
+
+The task reads `mavenCentralUsername` and `mavenCentralPassword` from Gradle user properties, or `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD` from the environment. Use `-PcentralPublishingType=AUTOMATIC` when automatic publishing is desired.
 
 > This tool was provided by ByteDance's Douyin Android team.
 

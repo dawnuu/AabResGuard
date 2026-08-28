@@ -1,4 +1,10 @@
 import java.security.MessageDigest
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+import java.util.Locale
 
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
@@ -36,6 +42,33 @@ task clean(type: Delete) {
 def centralVersion = VERSION.toString()
 def centralGroupPath = GROUP_ID.toString().replace('.', '/')
 def centralPluginId = PLUGIN_ID.toString()
+def resolveCentralProperty = { String propertyName, String environmentName ->
+    def projectValue = findProperty(propertyName)
+    if (projectValue != null && projectValue.toString().trim()) {
+        return projectValue.toString().trim()
+    }
+    def systemValue = System.getProperty(propertyName)
+    if (systemValue != null && systemValue.trim()) {
+        return systemValue.trim()
+    }
+    def environmentValue = System.getenv(environmentName)
+    if (environmentValue != null && environmentValue.trim()) {
+        return environmentValue.trim()
+    }
+    return null
+}
+def centralDeploymentName = {
+    resolveCentralProperty('centralDeploymentName', 'MAVEN_CENTRAL_DEPLOYMENT_NAME')
+            ?: "aabresguard-${centralVersion}"
+}
+def centralPublishingType = {
+    def publishingType = (resolveCentralProperty('centralPublishingType', 'MAVEN_CENTRAL_PUBLISHING_TYPE')
+            ?: 'USER_MANAGED').toUpperCase(Locale.ROOT)
+    if (!(publishingType in ['AUTOMATIC', 'USER_MANAGED'])) {
+        throw new GradleException('centralPublishingType must be AUTOMATIC or USER_MANAGED.')
+    }
+    return publishingType
+}
 def centralArtifactCoordinates = [
         [groupPath: centralGroupPath, artifactId: 'aabresguard-core'],
         [groupPath: centralGroupPath, artifactId: 'aabresguard-plugin'],
@@ -120,6 +153,69 @@ tasks.register('centralPortalBundle', Zip) {
             into("${coordinates.groupPath}/${coordinates.artifactId}/${centralVersion}")
             include('*.jar', '*.pom', '*.asc', '*.md5', '*.sha1', '*.sha256', '*.sha512')
             exclude('*.module*')
+        }
+    }
+}
+
+tasks.register('centralPortalUpload') {
+    dependsOn('centralPortalBundle')
+    doLast {
+        def username = resolveCentralProperty('mavenCentralUsername', 'MAVEN_CENTRAL_USERNAME')
+        def password = resolveCentralProperty('mavenCentralPassword', 'MAVEN_CENTRAL_PASSWORD')
+        if (username == null || password == null) {
+            throw new GradleException('Set mavenCentralUsername/mavenCentralPassword or MAVEN_CENTRAL_USERNAME/MAVEN_CENTRAL_PASSWORD before uploading.')
+        }
+
+        def bundleFile = tasks.named('centralPortalBundle', Zip).get().archiveFile.get().asFile
+        if (!bundleFile.isFile()) {
+            throw new GradleException("Missing Maven Central bundle: ${bundleFile}")
+        }
+
+        def deploymentName = centralDeploymentName()
+        def publishingType = centralPublishingType()
+        def encodedName = URLEncoder.encode(deploymentName, StandardCharsets.UTF_8.name())
+        def uploadUrl = new URL("https://central.sonatype.com/api/v1/publisher/upload?name=${encodedName}&publishingType=${publishingType}")
+        def connection = (HttpURLConnection) uploadUrl.openConnection()
+        def boundary = "----AabResGuard${System.currentTimeMillis()}"
+        def authorization = Base64.encoder.encodeToString(
+                "${username}:${password}".getBytes(StandardCharsets.UTF_8)
+        )
+
+        connection.requestMethod = 'POST'
+        connection.doOutput = true
+        connection.connectTimeout = 30_000
+        connection.readTimeout = 120_000
+        connection.setChunkedStreamingMode(0)
+        connection.setRequestProperty('Authorization', "Bearer ${authorization}")
+        connection.setRequestProperty('Content-Type', "multipart/form-data; boundary=${boundary}")
+
+        try {
+            connection.outputStream.withCloseable { outputStream ->
+                def writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)
+                writer.write("--${boundary}\r\n")
+                writer.write("Content-Disposition: form-data; name=\"bundle\"; filename=\"${bundleFile.name}\"\r\n")
+                writer.write("Content-Type: application/octet-stream\r\n\r\n")
+                writer.flush()
+                bundleFile.withInputStream { inputStream ->
+                    byte[] buffer = new byte[8192]
+                    int readCount
+                    while ((readCount = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, readCount)
+                    }
+                }
+                writer.write("\r\n--${boundary}--\r\n")
+                writer.flush()
+            }
+
+            def responseCode = connection.responseCode
+            def responseStream = responseCode >= 400 ? connection.errorStream : connection.inputStream
+            def response = responseStream == null ? '' : responseStream.getText(StandardCharsets.UTF_8.name()).trim()
+            if (responseCode < 200 || responseCode >= 300) {
+                throw new GradleException("Maven Central upload failed (${responseCode}): ${response}")
+            }
+            logger.lifecycle("Maven Central deployment uploaded: ${deploymentName} (${publishingType}), ID: ${response}")
+        } finally {
+            connection.disconnect()
         }
     }
 }
