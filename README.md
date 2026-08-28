@@ -4,9 +4,9 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
-> **Migration note for v1.0.0:** If you are upgrading from a pre-1.0.0 version, update the repository, plugin ID, and legacy dependency as shown below. Java/Kotlin package names in your source code do not need to change.
+> **Maven Central migration:** When migrating from the custom Maven repository to Maven Central, update the repository, plugin ID, and legacy dependency as shown below. Java/Kotlin package names in your source code do not need to change.
 >
-> | Item | Before v1.0.0 | v1.0.0 |
+> | Item | Custom Maven setup | Maven Central setup |
 > | --- | --- | --- |
 > | Repository | Custom Maven repository | mavenCentral() |
 > | Plugins DSL ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |

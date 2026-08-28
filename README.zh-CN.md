@@ -4,9 +4,9 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
-> **v1.0.0 迁移说明：** 从 1.0.0 之前的版本升级时，需要更新仓库、插件 ID 和旧版依赖，具体如下。源代码中的 Java/Kotlin 包名无需修改。
+> **Maven Central 迁移说明：** 从自定义 Maven 仓库迁移到 Maven Central 时，需要更新仓库、插件 ID 和旧版依赖，具体如下。源代码中的 Java/Kotlin 包名无需修改。
 >
-> | 项目 | 1.0.0 之前 | v1.0.0 |
+> | 项目 | 自定义 Maven 接入 | Maven Central 接入 |
 > | --- | --- | --- |
 > | 仓库 | 自定义 Maven 仓库 | mavenCentral() |
 > | Plugins DSL ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
