@@ -113,6 +113,12 @@ plugins {
 > }
 > ```
 >
+> 在 application module 中启用插件：
+>
+> ```gradle
+> apply plugin: "io.github.dawnuu.aabresguard"
+> ```
+>
 > **Kotlin DSL（.kts）：**
 >
 > ```kotlin
@@ -125,6 +131,12 @@ plugins {
 >     classpath("io.github.dawnuu:aabresguard-plugin:1.0.0")
 >   }
 > }
+> ```
+>
+> 在 application module 中启用插件：
+>
+> ```kotlin
+> apply(plugin = "io.github.dawnuu.aabresguard")
 > ```
 
 #### 2. 配置参数

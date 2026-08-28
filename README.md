@@ -4,27 +4,36 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
-The published artifacts are available from Maven Central.
+The current release is published to Maven Central. You can use the Gradle plugin directly with `io.github.dawnuu:aabresguard-plugin:1.0.0`.
 
 > This tool was provided by ByteDance's Douyin Android team.
 
-AabResGuard obfuscates resources in Android App Bundle (`.aab`) files.
-
 ## Features
 
+> A resource obfuscation tool for Android App Bundle files.
+
 - **Resource deduplication:** merges duplicate resource files to reduce bundle size.
-- **File filtering:** filters files in a bundle; currently supports the `META-INF/` and `lib/` paths.
+- **File filtering:** filters files in a `bundle`; currently supports the `META-INF/` and `lib/` paths.
 - **Allowlist:** resource names matching the allowlist are not obfuscated.
-- **Incremental obfuscation:** reuses a mapping file between builds.
-- **String removal:** removes specified strings and translations from a line-separated list.
+- **Incremental obfuscation:** accepts a `mapping` file to support incremental obfuscation.
+- **String removal:** accepts a line-separated string file to remove strings and translations.
 
 ## Quick start
 
-Use either the Gradle plugin, which integrates with the bundle task, or the command-line JAR for CI/CD and standalone workflows.
+AabResGuard provides two integration methods:
 
-### Gradle plugin
+- **Gradle Plugin:** the recommended method; it integrates with the packaging workflow, so the original bundle command performs obfuscation.
+- **Command-line tool:** suitable for CI/CD or standalone workflows through a JAR command.
 
-Declare the plugin in `gradle/libs.versions.toml`:
+---
+
+### 1. Gradle Plugin
+
+#### 1.1 Add the plugin
+
+We recommend using the [Gradle plugins DSL](https://docs.gradle.org/current/userguide/plugins.html#sec:plugins_block).
+
+Declare the version in `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
@@ -34,7 +43,37 @@ aabresguard = "1.0.0"
 aabresguard = { id = "io.github.dawnuu.aabresguard", version.ref = "aabresguard" }
 ```
 
-Configure the repository and plugin in the root project:
+`libs.versions.toml` is shared by Groovy DSL and Kotlin DSL projects.
+
+**Groovy DSL:**
+
+Declare the plugin version and configure repositories in `build.gradle` for the root project:
+
+```gradle
+plugins {
+  alias(libs.plugins.aabresguard) apply false
+}
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    google()
+    mavenCentral()
+  }
+}
+```
+
+Enable the plugin in `build.gradle` for the application module:
+
+```gradle
+plugins {
+  alias(libs.plugins.aabresguard)
+}
+```
+
+**Kotlin DSL (`.kts`):**
+
+Declare the plugin version and configure repositories in `build.gradle.kts` for the root project:
 
 ```kotlin
 plugins {
@@ -50,7 +89,7 @@ dependencyResolutionManagement {
 }
 ```
 
-Then apply it in the application module:
+Enable the plugin in `build.gradle.kts` for the application module:
 
 ```kotlin
 plugins {
@@ -58,79 +97,243 @@ plugins {
 }
 ```
 
-Groovy DSL uses the same `plugins` blocks in `build.gradle`. The legacy alternative is `classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"` followed by applying the plugin in the application module.
+> You can also use the legacy `buildscript` method:
+>
+> **Groovy DSL:**
+>
+> Add the dependency in the root project:
+>
+> ```gradle
+> buildscript {
+>   repositories {
+>     mavenCentral()
+>     google()
+>   }
+>   dependencies {
+>     classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"
+>   }
+> }
+> ```
+>
+> Apply the plugin in the application module:
+>
+> ```gradle
+> apply plugin: "io.github.dawnuu.aabresguard"
+> ```
+>
+> **Kotlin DSL (`.kts`):**
+>
+> Add the dependency in the root project:
+>
+> ```kotlin
+> buildscript {
+>   repositories {
+>     mavenCentral()
+>     google()
+>   }
+>   dependencies {
+>     classpath("io.github.dawnuu:aabresguard-plugin:1.0.0")
+>   }
+> }
+> ```
+>
+> Apply the plugin in the application module:
+>
+> ```kotlin
+> apply(plugin = "io.github.dawnuu.aabresguard")
+> ```
 
-### Plugin configuration
+#### 1.2 Configuration options
+
+Add an `aabResGuard` configuration block in `build.gradle` for the application module.
+
+**Groovy DSL:**
+
+```gradle
+aabResGuard {
+    // Enable resource obfuscation; default: true
+    enableObfuscate = true
+    // Remove duplicate resources; default: false
+    mergeDuplicatedRes = true
+    // Enable file filtering; default: false
+    enableFilterFiles = true
+    // Enable string filtering; default: false
+    enableFilterStrings = false
+    // Remove BUNDLE-METADATA; default: true
+    removeBundleMetadata = true
+    // Remove files in the root directory; default: false
+    removeRootFiles = true
+
+    // Mapping file for incremental obfuscation (optional)
+    mappingFile = file("mapping.txt").toPath()
+
+    // Custom allowlist rules are merged with the built-in allowlist
+    whiteList = [
+        "*.R.raw.*",
+        "*.R.drawable.icon"
+    ]
+
+    // Obfuscated output name; it must end with .aab
+    // Default: {packageName}_{versionName}_{versionCode}.aab
+    obfuscatedBundleFileName = "duplicated-app.aab"
+
+    // File filtering rules
+    filterList = [
+        "*/arm64-v8a/*",
+        "META-INF/*"
+    ]
+
+    // String filtering list; defaults to the mapping file directory
+    unusedStringPath = file("unused.txt").toPath()
+
+    // Retain en, en-xx, zh, zh-xx, and other selected languages (optional)
+    languageWhiteList = ["en", "zh"]
+}
+```
+
+**Kotlin DSL (`.kts`):**
 
 ```kotlin
 configure<AabResGuardExtension> {
+    // Enable resource obfuscation; default: true
     enableObfuscate = true
+    // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
+    // Enable file filtering; default: false
     enableFilterFiles = true
+    // Enable string filtering; default: false
     enableFilterStrings = false
+    // Remove BUNDLE-METADATA; default: true
     removeBundleMetadata = true
+    // Remove files in the root directory; default: false
     removeRootFiles = true
 
+    // Mapping file for incremental obfuscation (optional)
     mappingFile = file("mapping.txt").toPath()
-    whiteList = setOf("*.R.raw.*", "*.R.drawable.icon")
-    obfuscatedBundleFileName = "obfuscated-app.aab"
-    filterList = setOf("*/arm64-v8a/*", "META-INF/*")
+
+    // Custom allowlist rules are merged with the built-in allowlist
+    whiteList = setOf(
+        "*.R.raw.*",
+        "*.R.drawable.icon"
+    )
+
+    // Obfuscated output name; it must end with .aab
+    // Default: {packageName}_{versionName}_{versionCode}.aab
+    obfuscatedBundleFileName = "duplicated-app.aab"
+
+    // File filtering rules
+    filterList = setOf(
+        "*/arm64-v8a/*",
+        "META-INF/*"
+    )
+
+    // String filtering list; defaults to the mapping file directory
     unusedStringPath = file("unused.txt").toPath()
+
+    // Retain en, en-xx, zh, zh-xx, and other selected languages (optional)
     languageWhiteList = listOf("en", "zh")
 }
 ```
 
-In Groovy DSL, use an `aabResGuard { ... }` block and lists such as `whiteList = ["*.R.raw.*"]`.
+#### 1.3 Built-in allowlist
 
-| Option | Description | Default |
-| --- | --- | --- |
-| `enableObfuscate` | Enables resource obfuscation. | `true` |
-| `mergeDuplicatedRes` | Merges duplicate resources. | `false` |
-| `enableFilterFiles` | Enables file filtering. | `false` |
-| `enableFilterStrings` | Enables removal of unused strings. | `false` |
-| `removeBundleMetadata` | Removes `BUNDLE-METADATA`. | `true` |
-| `removeRootFiles` | Removes files in the bundle root. | `false` |
-| `mappingFile` | Optional mapping file for incremental obfuscation. | — |
-| `whiteList` | Additional resource-name allowlist; merged with the built-in rules. | — |
-| `obfuscatedBundleFileName` | Output name; must end in `.aab`. | `{packageName}_{versionName}_{versionCode}.aab` |
-| `filterList` | File-filter rules. | — |
-| `unusedStringPath` | Path to the unused-string list. | Next to the mapping file |
-| `languageWhiteList` | Languages to retain, such as `en`, `en-XX`, `zh`, and `zh-XX`. | — |
+The plugin automatically applies the following built-in allowlist rules:
 
-The built-in allowlist protects app icons, important third-party SDK configuration (including Firebase and Crashlytics), and Douyin-related resources. See the [Chinese README](README.zh-CN.md) for the complete built-in-rule list.
+```kotlin
+// Built-in allowlist; custom rules are merged with these rules
+"*.R.mipmap.ic_*",                // App icons
+"*.R.mipmap.logo*",               // Logo
+"*.R.string.default_web_client_id",
+"*.R.string.firebase_database_url",
+"*.R.string.gcm_defaultSenderId",
+"*.R.string.google_api_key",
+"*.R.string.google_app_id",
+"*.R.string.google_crash_reporting_api_key",
+"*.R.string.google_storage_bucket",
+"*.R.string.project_id",
+"*.R.string.com.crashlytics.android.build_id",
+"*.R.string.com.google.firebase.crashlytics.mapping_file_id",
+"*.R.string.tt_*",                // Douyin-related resources
+"*.R.layout.tt_*",
+"*.R.drawable.tt_*",
+"*.R.layout.notification_*",      // Notification layouts
+"*.R.string.star_*",
+"*.R.dimen.tt_*",
+"*.R.integer.tt_*",
+"*.R.anim.tt_*",
+"*.R.xml.tt_*",
+"*.R.color.tt_*",
+"*.R.style.tt_*",
+"*.R.raw.tt_*",
+"*.R.mipmap.tt_*",
+"*.R.menu.tt_*",
+"*.R.attr.tt_*",
+"*.R.style.Theme.Dialog.TT_*",
+"*.R.style.quick_*",
+"*.R.style.EditTextStyle*",
+"*.R.id.tt_*"
+```
 
-### Run the plugin
+> The built-in allowlist mainly covers **app icons**, **key third-party SDK configuration** such as Firebase and Crashlytics, and **Douyin-related resources**.
 
-The plugin hooks into the `bundle` task. Run the normal bundle command (only Release variants are processed by default):
+#### 1.4 Run obfuscation
 
-```sh
+The `aabResGuard plugin` is integrated into the `bundle` packaging workflow. Run the original bundle command to perform obfuscation; only Release variants are processed by default:
+
+```cmd
 ./gradlew clean :app:bundleRelease --stacktrace
 ```
 
-The task prints the before/after bundle-size comparison. To obtain the output path through the Gradle Task API:
+The task prints a before-and-after bundle-size comparison when obfuscation finishes.
+
+#### 1.5 Get the obfuscated bundle path
+
+Use the Gradle Task API to obtain the obfuscated bundle path.
+
+**Groovy DSL:**
+
+```groovy
+def aabResGuardPlugin = project.tasks.getByName("aabresguardRelease")
+Path bundlePath = aabResGuardPlugin.getObfuscatedBundlePath()
+```
+
+**Kotlin DSL (`.kts`):**
 
 ```kotlin
 val aabResGuardPlugin = project.tasks.getByName("aabresguardRelease")
 val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 ```
 
-### Command-line tool
+---
 
-Download the latest `AabResGuard-x.x.x.jar` from [Releases](https://github.com/dawnuu/AabResGuard/releases). Create an XML configuration file:
+### 2. Command-line tool
+
+#### 2.1 Download
+
+Download the latest `AabResGuard-x.x.x.jar` from [Releases](https://github.com/dawnuu/AabResGuard/releases).
+
+#### 2.2 Prepare the configuration file
+
+The command-line tool uses an XML configuration file to define allowlist and filtering rules:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <resguard>
+    <!-- Allowlist rules -->
     <issue>
         <white-list>
             *.R.raw.*
             *.R.drawable.icon
         </white-list>
     </issue>
+
+    <!-- File filtering rules (optional) -->
     <filter>
         <rule>*/arm64-v8a/*</rule>
         <rule>META-INF/*</rule>
     </filter>
+
+    <!-- String filtering configuration (optional) -->
     <string-filter>
         <unused-path>unused.txt</unused-path>
         <language-white-list>
@@ -141,9 +344,9 @@ Download the latest `AabResGuard-x.x.x.jar` from [Releases](https://github.com/d
 </resguard>
 ```
 
-Run obfuscation:
+#### 2.3 Run obfuscation
 
-```sh
+```cmd
 java -jar AabResGuard.jar obfuscate-bundle \
   --bundle=app.aab \
   --output=obfuscated-app.aab \
@@ -154,11 +357,32 @@ java -jar AabResGuard.jar obfuscate-bundle \
   --remove-root-files=true
 ```
 
-Required arguments are `--bundle`, `--output`, and `--config`. Optional arguments include `--mapping`, `--merge-duplicated-res=true`, `--remove-bundle-metadata=true`, `--remove-root-files=true`, `--disable-sign=true`, `--storeFile`, `--storePassword`, `--keyAlias`, and `--keyPassword`.
+**Required arguments:**
 
-Example GitHub Actions step:
+| Argument | Description |
+|------|------|
+| `--bundle` | Input AAB file path |
+| `--output` | Obfuscated output AAB file path |
+| `--config` | Configuration file path |
+
+**Optional arguments:**
+
+| Argument | Description |
+|------|------|
+| `--mapping` | Mapping file path for incremental obfuscation |
+| `--merge-duplicated-res=true` | Remove duplicate resources |
+| `--remove-bundle-metadata=true` | Remove BUNDLE-METADATA |
+| `--remove-root-files=true` | Remove files in the root directory |
+| `--disable-sign=true` | Disable signing |
+| `--storeFile` | Signing keystore file path |
+| `--storePassword` | Keystore password |
+| `--keyAlias` | Key alias |
+| `--keyPassword` | Key password |
+
+#### 2.4 CI/CD integration example
 
 ```yaml
+# GitHub Actions example
 - name: Obfuscate AAB
   run: |
     java -jar AabResGuard.jar obfuscate-bundle \
@@ -168,6 +392,6 @@ Example GitHub Actions step:
       --merge-duplicated-res=true
 ```
 
-## Related project
+## Recommended project
 
-- [StringBlur](https://github.com/dawnuu/StringBlur) — Android string encryption tool.
+- **[StringBlur](https://github.com/dawnuu/StringBlur)** — an Android string encryption tool that helps prevent strings from being easily extracted through reverse engineering.
