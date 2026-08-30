@@ -178,6 +178,7 @@ public abstract class ObfuscateBundleCommand {
         }
 
         builder.setOutputPath(OUTPUT_FILE_FLAG.getRequiredValue(flags));
+        builder.setBundleMetaDataWhiteList(new HashSet<>());
 
         MERGE_DUPLICATED_RES_FLAG.getValue(flags).ifPresent(builder::setMergeDuplicatedResources);
 
@@ -401,13 +402,13 @@ public abstract class ObfuscateBundleCommand {
 
             if (!command.getBundlePath().toFile().getName().endsWith(".aab")) {
                 throw CommandExecutionException.builder()
-                        .withMessage("Wrong properties: %s must end with '.aab'.",
+                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
                                 BUNDLE_LOCATION_FLAG)
                         .build();
             }
             if (!command.getOutputPath().toFile().getName().endsWith(".aab")) {
                 throw CommandExecutionException.builder()
-                        .withMessage("Wrong properties: %s must end with '.aab'.",
+                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
                                 OUTPUT_FILE_FLAG)
                         .build();
             }
@@ -416,7 +417,7 @@ public abstract class ObfuscateBundleCommand {
                 checkFileExistsAndReadable(file.toPath());
                 if (!file.getName().endsWith(".txt")) {
                     throw CommandExecutionException.builder()
-                            .withMessage("Wrong properties: %s must end with '.txt'.",
+                            .withInternalMessage("Wrong properties: %s must end with '.txt'.",
                                     MAPPING_FLAG)
                             .build();
                 }
