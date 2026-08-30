@@ -3,7 +3,6 @@ package com.bytedance.android.aabresguard.commands;
 import com.android.tools.build.bundletool.flags.Flag;
 import com.android.tools.build.bundletool.flags.ParsedFlags;
 import com.android.tools.build.bundletool.model.AppBundle;
-import com.android.tools.build.bundletool.model.exceptions.CommandExecutionException;
 import com.bytedance.android.aabresguard.android.JarSigner;
 import com.bytedance.android.aabresguard.bundle.AppBundleAnalyzer;
 import com.bytedance.android.aabresguard.bundle.AppBundlePackager;
@@ -26,6 +25,7 @@ import java.util.logging.Logger;
 import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileDoesNotExist;
 import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
 import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
+import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.commandExecutionException;
 import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.checkFlagPresent;
 
 /**
@@ -121,18 +121,14 @@ public abstract class FileFilterCommand {
         if (configOptional.isPresent()) {
             Path configPath = configOptional.get();
             if (!configPath.toFile().getName().endsWith(".xml")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.xml'.",
-                                CONFIG_LOCATION_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.xml'.",
+                        CONFIG_LOCATION_FLAG);
             }
             FileFilterXmlParser parser = new FileFilterXmlParser(configPath);
             FileFilterConfig fileFilter = parser.parse();
             if (!fileFilter.isActive()) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("parser attribute filter#isactive can not be 'false' in %s command",
-                                COMMAND_NAME)
-                        .build();
+                throw commandExecutionException("parser attribute filter#isactive can not be 'false' in %s command",
+                        COMMAND_NAME);
             }
             builder.setFileFilterRules(fileFilter.getRules());
         }
@@ -222,16 +218,12 @@ public abstract class FileFilterCommand {
             checkFileExistsAndReadable(command.getBundlePath());
             checkFileDoesNotExist(command.getOutputPath());
             if (!command.getBundlePath().toFile().getName().endsWith(".aab")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
-                                BUNDLE_LOCATION_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.aab'.",
+                        BUNDLE_LOCATION_FLAG);
             }
             if (!command.getOutputPath().toFile().getName().endsWith(".aab")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
-                                OUTPUT_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.aab'.",
+                        OUTPUT_FLAG);
             }
 
             if (command.getStoreFile().isPresent()) {

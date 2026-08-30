@@ -3,7 +3,6 @@ package com.bytedance.android.aabresguard.commands;
 import com.android.tools.build.bundletool.flags.Flag;
 import com.android.tools.build.bundletool.flags.ParsedFlags;
 import com.android.tools.build.bundletool.model.AppBundle;
-import com.android.tools.build.bundletool.model.exceptions.CommandExecutionException;
 import com.bytedance.android.aabresguard.android.JarSigner;
 import com.bytedance.android.aabresguard.bundle.AppBundleAnalyzer;
 import com.bytedance.android.aabresguard.bundle.AppBundlePackager;
@@ -21,6 +20,7 @@ import java.util.logging.Logger;
 import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileDoesNotExist;
 import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
 import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
+import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.commandExecutionException;
 import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.checkFlagPresent;
 
 /**
@@ -191,17 +191,13 @@ public abstract class DuplicatedResourcesMergerCommand {
             checkFileDoesNotExist(command.getOutputPath());
 
             if (!command.getBundlePath().toFile().getName().endsWith(".aab")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
-                                BUNDLE_LOCATION_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.aab'.",
+                        BUNDLE_LOCATION_FLAG);
             }
 
             if (!command.getOutputPath().toFile().getName().endsWith(".aab")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
-                                OUTPUT_FILE_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.aab'.",
+                        OUTPUT_FILE_FLAG);
             }
 
             if (command.getStoreFile().isPresent()) {

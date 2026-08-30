@@ -2,12 +2,12 @@ package com.bytedance.android.aabresguard.commands;
 
 import static com.android.tools.build.bundletool.model.utils.files.FilePreconditions.checkFileExistsAndReadable;
 import static com.bytedance.android.aabresguard.utils.FileOperation.getNetFileSizeDescription;
+import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.commandExecutionException;
 import static com.bytedance.android.aabresguard.utils.exception.CommandExceptionPreconditions.checkFlagPresent;
 
 import com.android.tools.build.bundletool.flags.Flag;
 import com.android.tools.build.bundletool.flags.ParsedFlags;
 import com.android.tools.build.bundletool.model.AppBundle;
-import com.android.tools.build.bundletool.model.exceptions.CommandExecutionException;
 import com.bytedance.android.aabresguard.android.JarSigner;
 import com.bytedance.android.aabresguard.bundle.AppBundleAnalyzer;
 import com.bytedance.android.aabresguard.bundle.AppBundlePackager;
@@ -401,25 +401,19 @@ public abstract class ObfuscateBundleCommand {
             }
 
             if (!command.getBundlePath().toFile().getName().endsWith(".aab")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
-                                BUNDLE_LOCATION_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.aab'.",
+                        BUNDLE_LOCATION_FLAG);
             }
             if (!command.getOutputPath().toFile().getName().endsWith(".aab")) {
-                throw CommandExecutionException.builder()
-                        .withInternalMessage("Wrong properties: %s must end with '.aab'.",
-                                OUTPUT_FILE_FLAG)
-                        .build();
+                throw commandExecutionException("Wrong properties: %s must end with '.aab'.",
+                        OUTPUT_FILE_FLAG);
             }
             if (command.getMappingPath().isPresent()) {
                 File file = command.getMappingPath().get().toFile();
                 checkFileExistsAndReadable(file.toPath());
                 if (!file.getName().endsWith(".txt")) {
-                    throw CommandExecutionException.builder()
-                            .withInternalMessage("Wrong properties: %s must end with '.txt'.",
-                                    MAPPING_FLAG)
-                            .build();
+                    throw commandExecutionException("Wrong properties: %s must end with '.txt'.",
+                            MAPPING_FLAG);
                 }
             }
 

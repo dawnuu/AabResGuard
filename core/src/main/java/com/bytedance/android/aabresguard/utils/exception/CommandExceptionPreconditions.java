@@ -15,9 +15,13 @@ public final class CommandExceptionPreconditions {
         if (object instanceof Optional) {
             object = ((Optional) object).get();
         }
-        Optional.of(object).orElseThrow(() -> CommandExecutionException.builder()
-                .withInternalMessage("Wrong properties: %s can not be empty", flag)
-                .build());
+        Optional.of(object).orElseThrow(() -> commandExecutionException(
+                "Wrong properties: %s can not be empty", flag));
+    }
+
+    public static CommandExecutionException commandExecutionException(String message, Object... args) {
+        String formattedMessage = String.format(message, args);
+        return new CommandExecutionException(formattedMessage, formattedMessage);
     }
 
     public static void checkStringIsEmpty(String value, String name) {
