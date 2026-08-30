@@ -4,43 +4,18 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
+## Migration guide
+
 > **Maven Central migration:** When migrating from the custom Maven repository to Maven Central, update the repository, plugin ID, and legacy dependency as shown below. Java/Kotlin package names in your source code do not need to change.
 >
 > | Item | Custom Maven setup | Maven Central setup |
 > | --- | --- | --- |
 > | Repository | Custom Maven repository | mavenCentral() |
 > | Plugins DSL ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
-> | Legacy dependency | com.bytedance.android:aabresguard-plugin:0.1.x | io.github.dawnuu:aabresguard-plugin:1.0.0 |
+> | Legacy dependency | com.bytedance.android:aabresguard-plugin:0.1.x | io.github.dawnuu:aabresguard-plugin:1.0.1 |
 > | Legacy apply ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
 
-The current release is published to Maven Central. You can use the Gradle plugin directly with `io.github.dawnuu:aabresguard-plugin:1.0.0`.
-
-## Maven Central Deployment
-
-The project provides a `centralPortalUpload` task that creates and uploads the signed bundle to Maven Central. The default Deployment name is `aabresguard-1.0.0`; customize it with `-PcentralDeploymentName`.
-
-```sh
-./gradlew centralPortalUpload \
-  -PcentralRelease=true \
-  -PcentralDeploymentName="AabResGuard 1.0.0" \
-  -PcentralPublishingType=USER_MANAGED
-```
-
-The task reads `mavenCentralUsername` and `mavenCentralPassword` from Gradle user properties, or `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD` from the environment. Use `-PcentralPublishingType=AUTOMATIC` when automatic publishing is desired.
-
-> This tool was provided by ByteDance's Douyin Android team.
-
-## Features
-
-> A resource obfuscation tool for Android App Bundle files.
-
-- **Resource deduplication:** merges duplicate resource files to reduce bundle size.
-- **File filtering:** filters files in a `bundle`; currently supports the `META-INF/` and `lib/` paths.
-- **Allowlist:** resource names matching the allowlist are not obfuscated.
-- **Incremental obfuscation:** accepts a `mapping` file to support incremental obfuscation.
-- **String removal:** accepts a line-separated string file to remove strings and translations.
-
-## Quick start
+## Integration guide
 
 AabResGuard provides two integration methods:
 
@@ -59,7 +34,7 @@ Declare the version in `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
-aabresguard = "1.0.0"
+aabresguard = "1.0.1"
 
 [plugins]
 aabresguard = { id = "io.github.dawnuu.aabresguard", version.ref = "aabresguard" }
@@ -132,7 +107,7 @@ plugins {
 >     google()
 >   }
 >   dependencies {
->     classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"
+>     classpath "io.github.dawnuu:aabresguard-plugin:1.0.1"
 >   }
 > }
 > ```
@@ -154,7 +129,7 @@ plugins {
 >     google()
 >   }
 >   dependencies {
->     classpath("io.github.dawnuu:aabresguard-plugin:1.0.0")
+>     classpath("io.github.dawnuu:aabresguard-plugin:1.0.1")
 >   }
 > }
 > ```
@@ -175,6 +150,10 @@ Add an `aabResGuard` configuration block in `build.gradle` for the application m
 aabResGuard {
     // Enable resource obfuscation; default: true
     enableObfuscate = true
+    // Generate random resource names; default: false
+    useRandomName = false
+    // Append one random byte to media files to change their MD5; default: false
+    enableMutateMd5 = false
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
     // Enable file filtering; default: false
@@ -185,6 +164,10 @@ aabResGuard {
     removeBundleMetadata = true
     // Remove files in the root directory; default: false
     removeRootFiles = true
+    // Keep matching BUNDLE-METADATA files when removeBundleMetadata is true
+    bundleMetaDataWhiteList = [
+        "com.example.metadata"
+    ]
 
     // Mapping file for incremental obfuscation (optional)
     mappingFile = file("mapping.txt").toPath()
@@ -205,11 +188,15 @@ aabResGuard {
         "META-INF/*"
     ]
 
-    // String filtering list; defaults to the mapping file directory
-    unusedStringPath = file("unused.txt").toPath()
+    // String filtering list; path is relative to the current working directory (optional)
+    unusedStringPath = "unused.txt"
 
     // Retain en, en-xx, zh, zh-xx, and other selected languages (optional)
     languageWhiteList = ["en", "zh"]
+
+    // VirusTotal upload is disabled by default; do not hard-code the API key
+    enableVirusTotalUpload = false
+    virusTotalApiKey = System.getenv("VIRUSTOTAL_API_KEY") ?: ""
 }
 ```
 
@@ -219,6 +206,10 @@ aabResGuard {
 configure<AabResGuardExtension> {
     // Enable resource obfuscation; default: true
     enableObfuscate = true
+    // Generate random resource names; default: false
+    useRandomName = false
+    // Append one random byte to media files to change their MD5; default: false
+    enableMutateMd5 = false
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
     // Enable file filtering; default: false
@@ -229,6 +220,10 @@ configure<AabResGuardExtension> {
     removeBundleMetadata = true
     // Remove files in the root directory; default: false
     removeRootFiles = true
+    // Keep matching BUNDLE-METADATA files when removeBundleMetadata is true
+    bundleMetaDataWhiteList = setOf(
+        "com.example.metadata"
+    )
 
     // Mapping file for incremental obfuscation (optional)
     mappingFile = file("mapping.txt").toPath()
@@ -249,56 +244,19 @@ configure<AabResGuardExtension> {
         "META-INF/*"
     )
 
-    // String filtering list; defaults to the mapping file directory
-    unusedStringPath = file("unused.txt").toPath()
+    // String filtering list; path is relative to the current working directory (optional)
+    unusedStringPath = "unused.txt"
 
     // Retain en, en-xx, zh, zh-xx, and other selected languages (optional)
-    languageWhiteList = listOf("en", "zh")
+    languageWhiteList = setOf("en", "zh")
+
+    // VirusTotal upload is disabled by default; do not hard-code the API key
+    enableVirusTotalUpload = false
+    virusTotalApiKey = System.getenv("VIRUSTOTAL_API_KEY") ?: ""
 }
 ```
 
-#### 1.3 Built-in allowlist
-
-The plugin automatically applies the following built-in allowlist rules:
-
-```kotlin
-// Built-in allowlist; custom rules are merged with these rules
-"*.R.mipmap.ic_*",                // App icons
-"*.R.mipmap.logo*",               // Logo
-"*.R.string.default_web_client_id",
-"*.R.string.firebase_database_url",
-"*.R.string.gcm_defaultSenderId",
-"*.R.string.google_api_key",
-"*.R.string.google_app_id",
-"*.R.string.google_crash_reporting_api_key",
-"*.R.string.google_storage_bucket",
-"*.R.string.project_id",
-"*.R.string.com.crashlytics.android.build_id",
-"*.R.string.com.google.firebase.crashlytics.mapping_file_id",
-"*.R.string.tt_*",                // Douyin-related resources
-"*.R.layout.tt_*",
-"*.R.drawable.tt_*",
-"*.R.layout.notification_*",      // Notification layouts
-"*.R.string.star_*",
-"*.R.dimen.tt_*",
-"*.R.integer.tt_*",
-"*.R.anim.tt_*",
-"*.R.xml.tt_*",
-"*.R.color.tt_*",
-"*.R.style.tt_*",
-"*.R.raw.tt_*",
-"*.R.mipmap.tt_*",
-"*.R.menu.tt_*",
-"*.R.attr.tt_*",
-"*.R.style.Theme.Dialog.TT_*",
-"*.R.style.quick_*",
-"*.R.style.EditTextStyle*",
-"*.R.id.tt_*"
-```
-
-> The built-in allowlist mainly covers **app icons**, **key third-party SDK configuration** such as Firebase and Crashlytics, and **Douyin-related resources**.
-
-#### 1.4 Run obfuscation
+#### 1.3 Run obfuscation
 
 The `aabResGuard plugin` is integrated into the `bundle` packaging workflow. Run the original bundle command to perform obfuscation; only Release variants are processed by default:
 
@@ -308,7 +266,7 @@ The `aabResGuard plugin` is integrated into the `bundle` packaging workflow. Run
 
 The task prints a before-and-after bundle-size comparison when obfuscation finishes.
 
-#### 1.5 Get the obfuscated bundle path
+#### 1.4 Get the obfuscated bundle path
 
 Use the Gradle Task API to obtain the obfuscated bundle path.
 
@@ -342,29 +300,27 @@ The command-line tool uses an XML configuration file to define allowlist and fil
 <?xml version="1.0" encoding="UTF-8"?>
 <resguard>
     <!-- Allowlist rules -->
-    <issue>
-        <white-list>
-            *.R.raw.*
-            *.R.drawable.icon
-        </white-list>
+    <issue id="whitelist" isactive="true">
+        <path value="*.R.raw.*"/>
+        <path value="*.R.drawable.icon"/>
     </issue>
 
     <!-- File filtering rules (optional) -->
-    <filter>
-        <rule>*/arm64-v8a/*</rule>
-        <rule>META-INF/*</rule>
+    <filter isactive="true">
+        <rule value="*/arm64-v8a/*"/>
+        <rule value="META-INF/*"/>
     </filter>
 
     <!-- String filtering configuration (optional) -->
-    <string-filter>
-        <unused-path>unused.txt</unused-path>
-        <language-white-list>
-            <language>en</language>
-            <language>zh</language>
-        </language-white-list>
-    </string-filter>
+    <filter-str isactive="true">
+        <path value="unused.txt"/>
+        <language value="en"/>
+        <language value="zh"/>
+    </filter-str>
 </resguard>
 ```
+
+The XML parser recognizes only the `issue`, `filter`, and `filter-str` elements shown above. `useRandomName`, `enableMutateMd5`, VirusTotal upload, and the BUNDLE-METADATA allowlist are currently Gradle-plugin options and have no command-line flags.
 
 #### 2.3 Run obfuscation
 

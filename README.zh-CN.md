@@ -4,43 +4,18 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dawnuu/aabresguard-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dawnuu/aabresguard-plugin)
 
+## 迁移教程
+
 > **Maven Central 迁移说明：** 从自定义 Maven 仓库迁移到 Maven Central 时，需要更新仓库、插件 ID 和旧版依赖，具体如下。源代码中的 Java/Kotlin 包名无需修改。
 >
 > | 项目 | 自定义 Maven 接入 | Maven Central 接入 |
 > | --- | --- | --- |
 > | 仓库 | 自定义 Maven 仓库 | mavenCentral() |
 > | Plugins DSL ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
-> | 旧版依赖 | com.bytedance.android:aabresguard-plugin:0.1.x | io.github.dawnuu:aabresguard-plugin:1.0.0 |
+> | 旧版依赖 | com.bytedance.android:aabresguard-plugin:0.1.x | io.github.dawnuu:aabresguard-plugin:1.0.1 |
 > | 旧版 apply ID | com.bytedance.android.aabResGuard | io.github.dawnuu.aabresguard |
 
-当前版本已发布到 Maven Central，可直接使用 `io.github.dawnuu:aabresguard-plugin:1.0.0`。
-
-## Maven Central 发布
-
-项目提供 `centralPortalUpload` 任务，用于生成并上传签名后的 bundle 到 Maven Central。默认 Deployment 名为 `aabresguard-1.0.0`，可以通过 `-PcentralDeploymentName` 自定义。
-
-```sh
-./gradlew centralPortalUpload \
-  -PcentralRelease=true \
-  -PcentralDeploymentName="AabResGuard 1.0.0" \
-  -PcentralPublishingType=USER_MANAGED
-```
-
-任务会从 Gradle 用户属性读取 `mavenCentralUsername` 和 `mavenCentralPassword`，也支持从环境变量读取 `MAVEN_CENTRAL_USERNAME` 和 `MAVEN_CENTRAL_PASSWORD`。如需自动发布，可设置 `-PcentralPublishingType=AUTOMATIC`。
-
-> 本工具由字节跳动抖音 Android 团队提供。
-
-## 特性
-
-> 针对 aab 文件的资源混淆工具
-
-- **资源去重：** 对重复资源文件进行合并，缩减包体积。
-- **文件过滤：** 支持对 `bundle` 包中的文件进行过滤，目前只支持 `META-INFO/`、`lib/` 路径下的过滤。
-- **白名单：** 白名单中的资源，名称不予混淆。
-- **增量混淆：** 输入 `mapping` 文件，支持增量混淆。
-- **文案删除：** 输入按行分割的字符串文件，移除文案及翻译。
-
-## 快速开始
+## 接入教程
 
 AabResGuard 提供两种接入方式：
 
@@ -59,7 +34,7 @@ AabResGuard 提供两种接入方式：
 
 ```toml
 [versions]
-aabresguard = "1.0.0"
+aabresguard = "1.0.1"
 
 [plugins]
 aabresguard = { id = "io.github.dawnuu.aabresguard", version.ref = "aabresguard" }
@@ -130,7 +105,7 @@ plugins {
 >     google()
 >   }
 >   dependencies {
->     classpath "io.github.dawnuu:aabresguard-plugin:1.0.0"
+>     classpath "io.github.dawnuu:aabresguard-plugin:1.0.1"
 >   }
 > }
 > ```
@@ -150,7 +125,7 @@ plugins {
 >     google()
 >   }
 >   dependencies {
->     classpath("io.github.dawnuu:aabresguard-plugin:1.0.0")
+>     classpath("io.github.dawnuu:aabresguard-plugin:1.0.1")
 >   }
 > }
 > ```
@@ -171,6 +146,10 @@ plugins {
 aabResGuard {
     // 是否开启资源混淆，默认 true
     enableObfuscate = true
+    // 是否生成随机资源名称，默认 false
+    useRandomName = false
+    // 是否给媒体文件追加随机字节以修改 MD5，默认 false
+    enableMutateMd5 = false
     // 是否允许去除重复资源，默认 false
     mergeDuplicatedRes = true
     // 是否允许过滤文件，默认 false
@@ -181,6 +160,10 @@ aabResGuard {
     removeBundleMetadata = true
     // 是否移除 root 目录，默认 false
     removeRootFiles = true
+    // removeBundleMetadata 开启时，保留匹配的 BUNDLE-METADATA 文件
+    bundleMetaDataWhiteList = [
+        "com.example.metadata"
+    ]
 
     // 用于增量混淆的 mapping 文件（可选）
     mappingFile = file("mapping.txt").toPath()
@@ -201,11 +184,15 @@ aabResGuard {
         "META-INF/*"
     ]
 
-    // 过滤文案列表路径，默认在 mapping 同目录查找
-    unusedStringPath = file("unused.txt").toPath()
+    // 过滤文案列表路径，相对于当前工作目录（可选）
+    unusedStringPath = "unused.txt"
 
     // 保留 en,en-xx,zh,zh-xx 等语言，其余均删除（可选）
     languageWhiteList = ["en", "zh"]
+
+    // 默认关闭 VirusTotal 上传，不要将 API key 硬编码到仓库
+    enableVirusTotalUpload = false
+    virusTotalApiKey = System.getenv("VIRUSTOTAL_API_KEY") ?: ""
 }
 ```
 
@@ -215,6 +202,10 @@ aabResGuard {
 configure<AabResGuardExtension> {
     // 是否开启资源混淆，默认 true
     enableObfuscate = true
+    // 是否生成随机资源名称，默认 false
+    useRandomName = false
+    // 是否给媒体文件追加随机字节以修改 MD5，默认 false
+    enableMutateMd5 = false
     // 是否允许去除重复资源，默认 false
     mergeDuplicatedRes = true
     // 是否允许过滤文件，默认 false
@@ -225,6 +216,10 @@ configure<AabResGuardExtension> {
     removeBundleMetadata = true
     // 是否移除 root 目录，默认 false
     removeRootFiles = true
+    // removeBundleMetadata 开启时，保留匹配的 BUNDLE-METADATA 文件
+    bundleMetaDataWhiteList = setOf(
+        "com.example.metadata"
+    )
 
     // 用于增量混淆的 mapping 文件（可选）
     mappingFile = file("mapping.txt").toPath()
@@ -245,56 +240,19 @@ configure<AabResGuardExtension> {
         "META-INF/*"
     )
 
-    // 过滤文案列表路径，默认在 mapping 同目录查找
-    unusedStringPath = file("unused.txt").toPath()
+    // 过滤文案列表路径，相对于当前工作目录（可选）
+    unusedStringPath = "unused.txt"
 
     // 保留 en,en-xx,zh,zh-xx 等语言，其余均删除（可选）
-    languageWhiteList = ["en", "zh"]
+    languageWhiteList = setOf("en", "zh")
+
+    // 默认关闭 VirusTotal 上传，不要将 API key 硬编码到仓库
+    enableVirusTotalUpload = false
+    virusTotalApiKey = System.getenv("VIRUSTOTAL_API_KEY") ?: ""
 }
 ```
 
-#### 3. 内置白名单
-
-插件内置了以下白名单规则，无需手动配置，自动生效：
-
-```kotlin
-// 内置白名单（自定义白名单会与之合并）
-"*.R.mipmap.ic_*",                // 应用图标
-"*.R.mipmap.logo*",               // Logo
-"*.R.string.default_web_client_id",
-"*.R.string.firebase_database_url",
-"*.R.string.gcm_defaultSenderId",
-"*.R.string.google_api_key",
-"*.R.string.google_app_id",
-"*.R.string.google_crash_reporting_api_key",
-"*.R.string.google_storage_bucket",
-"*.R.string.project_id",
-"*.R.string.com.crashlytics.android.build_id",
-"*.R.string.com.google.firebase.crashlytics.mapping_file_id",
-"*.R.string.tt_*",                // 抖音相关
-"*.R.layout.tt_*",
-"*.R.drawable.tt_*",
-"*.R.layout.notification_*",      // 通知栏布局
-"*.R.string.star_*",
-"*.R.dimen.tt_*",
-"*.R.integer.tt_*",
-"*.R.anim.tt_*",
-"*.R.xml.tt_*",
-"*.R.color.tt_*",
-"*.R.style.tt_*",
-"*.R.raw.tt_*",
-"*.R.mipmap.tt_*",
-"*.R.menu.tt_*",
-"*.R.attr.tt_*",
-"*.R.style.Theme.Dialog.TT_*",
-"*.R.style.quick_*",
-"*.R.style.EditTextStyle*",
-"*.R.id.tt_*"
-```
-
-> 内置白名单主要覆盖三类资源：**应用图标**、**第三方 SDK 关键配置**（Firebase、Crashlytics 等）、**抖音业务相关资源**。
-
-#### 4. 执行混淆
+#### 3. 执行混淆
 
 `aabResGuard plugin` 侵入了 `bundle` 打包流程，可以直接执行原始打包命令进行混淆（默认仅处理 Release 变体）：
 
@@ -304,7 +262,7 @@ configure<AabResGuardExtension> {
 
 混淆完成后会输出混淆前后的包体积对比。
 
-#### 5. 获取混淆产物路径
+#### 4. 获取混淆产物路径
 
 通过 Gradle Task API 获取混淆后的 bundle 文件路径：
 
@@ -338,29 +296,27 @@ val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 <?xml version="1.0" encoding="UTF-8"?>
 <resguard>
     <!-- 白名单规则 -->
-    <issue>
-        <white-list>
-            *.R.raw.*
-            *.R.drawable.icon
-        </white-list>
+    <issue id="whitelist" isactive="true">
+        <path value="*.R.raw.*"/>
+        <path value="*.R.drawable.icon"/>
     </issue>
 
     <!-- 文件过滤规则（可选） -->
-    <filter>
-        <rule>*/arm64-v8a/*</rule>
-        <rule>META-INF/*</rule>
+    <filter isactive="true">
+        <rule value="*/arm64-v8a/*"/>
+        <rule value="META-INF/*"/>
     </filter>
 
     <!-- 文案过滤配置（可选） -->
-    <string-filter>
-        <unused-path>unused.txt</unused-path>
-        <language-white-list>
-            <language>en</language>
-            <language>zh</language>
-        </language-white-list>
-    </string-filter>
+    <filter-str isactive="true">
+        <path value="unused.txt"/>
+        <language value="en"/>
+        <language value="zh"/>
+    </filter-str>
 </resguard>
 ```
+
+XML 解析器只识别上面示例中的 `issue`、`filter` 和 `filter-str` 元素。`useRandomName`、`enableMutateMd5`、VirusTotal 上传和 BUNDLE-METADATA 白名单目前仅支持 Gradle 插件配置，命令行没有对应参数。
 
 #### 3. 执行混淆
 
