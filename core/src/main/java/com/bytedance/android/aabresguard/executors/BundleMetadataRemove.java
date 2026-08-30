@@ -5,8 +5,10 @@ import static com.android.tools.build.bundletool.model.utils.files.FilePrecondit
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.android.tools.build.bundletool.model.BundleMetadata;
 import com.android.tools.build.bundletool.model.ZipPath;
+import com.google.common.io.ByteSource;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Set;
@@ -44,7 +46,12 @@ public class BundleMetadataRemove {
                 ZipPath zipPath = ZipPath.create(name);
                 if (needKeep(zipEntry.getName())) {
                     System.out.println("keep BUNDLE-METADATA file：" + zipEntry.getName());
-                    builder.addFile(zipPath, () -> bundleZipFile.getInputStream(zipEntry));
+                    builder.addFile(zipPath, new ByteSource() {
+                        @Override
+                        public InputStream openStream() throws IOException {
+                            return bundleZipFile.getInputStream(zipEntry);
+                        }
+                    });
                 }
             }
         }

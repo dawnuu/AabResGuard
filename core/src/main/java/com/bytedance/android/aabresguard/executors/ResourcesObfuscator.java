@@ -11,7 +11,6 @@ import com.android.aapt.Resources;
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.android.tools.build.bundletool.model.BundleModule;
 import com.android.tools.build.bundletool.model.BundleModuleName;
-import com.android.tools.build.bundletool.model.InMemoryModuleEntry;
 import com.android.tools.build.bundletool.model.ModuleEntry;
 import com.android.tools.build.bundletool.model.ZipPath;
 import com.android.tools.build.bundletool.model.utils.ResourcesUtils;
@@ -25,6 +24,7 @@ import com.bytedance.android.aabresguard.utils.FileOperation;
 import com.bytedance.android.aabresguard.utils.TimeClock;
 import com.bytedance.android.aabresguard.utils.Utils;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -234,7 +235,11 @@ public class ResourcesObfuscator {
                 if (enableMutateMd5 && isMediaFile(bundleRawPath)) {
                     data = mutateData(data);
                 }
-                obfuscateEntries.add(InMemoryModuleEntry.ofFile(obfuscatedPath, data));
+                obfuscateEntries.add(entry.toBuilder()
+                        .setPath(ZipPath.create(obfuscatedPath))
+                        .setFileLocation(Optional.empty())
+                        .setContent(ByteSource.wrap(data))
+                        .build());
             } else {
                 obfuscateEntries.add(entry);
             }
