@@ -29,7 +29,10 @@ import org.dom4j.DocumentException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -260,18 +263,35 @@ public abstract class ObfuscateBundleCommand {
             appBundle = baseRootFileRemove.remove();
         }
 
-        // package bundle
-        AppBundlePackager packager = new AppBundlePackager(appBundle, getOutputPath());
-        packager.execute();
-        // sign bundle
-        if (!getDisableSign().isPresent() || !getDisableSign().get()) {
-            AppBundleSigner signer = new AppBundleSigner(getOutputPath());
-            getStoreFile().ifPresent(storeFile -> {
-                signer.setBundleSignature(new JarSigner.Signature(
-                        storeFile, getStorePassword().get(), getKeyAlias().get(), getKeyPassword().get()
-                ));
-            });
-            signer.execute();
+        // package bundle to temporary staging path, then atomically replace output
+        Path stagingDir = Files.createTempDirectory(getOutputPath().getParent(), "aabresguard-staging-");
+        Path stagingOutput = stagingDir.resolve(getOutputPath().getFileName());
+        try {
+            AppBundlePackager packager = new AppBundlePackager(appBundle, stagingOutput);
+            packager.execute();
+            // sign bundle
+            if (!getDisableSign().isPresent() || !getDisableSign().get()) {
+                AppBundleSigner signer = new AppBundleSigner(stagingOutput);
+                getStoreFile().ifPresent(storeFile -> {
+                    signer.setBundleSignature(new JarSigner.Signature(
+                            storeFile, getStorePassword().get(), getKeyAlias().get(), getKeyPassword().get()
+                    ));
+                });
+                signer.execute();
+            }
+            // atomically replace output with staged file
+            try {
+                Files.move(stagingOutput, getOutputPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(stagingOutput, getOutputPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            // cleanup staging directory
+            try (java.util.stream.Stream<Path> walk = Files.walk(stagingDir)) {
+                walk.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                    try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                });
+            } catch (IOException ignored) {}
         }
 
         // VirusTotal Upload - 明确在此处调用
@@ -395,9 +415,33 @@ public abstract class ObfuscateBundleCommand {
         public ObfuscateBundleCommand build() {
             ObfuscateBundleCommand command = autoBuild();
             checkFileExistsAndReadable(command.getBundlePath());
-            //If file exists, just delete it instead of throwing exception
-            if (command.getOutputPath().toFile().exists()) {
-                command.getOutputPath().toFile().delete();
+            // Normalize output path to absolute
+            Path normalizedOutputPath = command.getOutputPath().toAbsolutePath().normalize();
+            if (!command.getOutputPath().equals(normalizedOutputPath)) {
+                setOutputPath(normalizedOutputPath);
+                command = autoBuild();
+            }
+
+            // Reject input/output identity (including normalized paths)
+            if (command.getBundlePath().toAbsolutePath().normalize()
+                    .equals(command.getOutputPath().toAbsolutePath().normalize())) {
+                throw commandExecutionException(
+                        "Input and output paths must be different: %s",
+                        BUNDLE_LOCATION_FLAG);
+            }
+            // Reject symlink/hardlink aliases
+            try {
+                if (Files.isSameFile(command.getBundlePath(), command.getOutputPath())) {
+                    throw commandExecutionException(
+                            "Input and output paths must be different: %s",
+                            BUNDLE_LOCATION_FLAG);
+                }
+            } catch (java.nio.file.NoSuchFileException e) {
+                // Output file doesn't exist yet, safe to proceed
+            } catch (IOException e) {
+                throw commandExecutionException(
+                        "Failed to inspect output path: %s",
+                        OUTPUT_FILE_FLAG);
             }
 
             if (!command.getBundlePath().toFile().getName().endsWith(".aab")) {
