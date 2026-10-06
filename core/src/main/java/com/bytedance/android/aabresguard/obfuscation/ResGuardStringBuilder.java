@@ -20,6 +20,8 @@ public class ResGuardStringBuilder {
     private final List<String> mReplaceStringBuffer;
     private final Set<Integer> mIsReplaced;
     private final Set<Integer> mIsWhiteList;
+    private HashSet<Pattern> mBlacklistPatterns = new HashSet<>();
+    private Set<String> mRemovedStrings = new HashSet<>();
     private String[] mAToZ = {
             "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
             "w", "x", "y", "z"
@@ -35,6 +37,7 @@ public class ResGuardStringBuilder {
      * LPT1, LPT2, LPT3, LPT4, LPT5, LPT6, LPT7, LPT8, and LPT9.
      */
     private HashSet<String> mFileNameBlackList;
+    private boolean mExtended = false;
 
     public ResGuardStringBuilder() {
         mFileNameBlackList = new HashSet<>();
@@ -42,6 +45,10 @@ public class ResGuardStringBuilder {
         mFileNameBlackList.add("prn");
         mFileNameBlackList.add("aux");
         mFileNameBlackList.add("nul");
+        for (int i = 1; i <= 9; i++) {
+            mFileNameBlackList.add("com" + i);
+            mFileNameBlackList.add("lpt" + i);
+        }
         mReplaceStringBuffer = new ArrayList<>();
         mIsReplaced = new HashSet<>();
         mIsWhiteList = new HashSet<>();
@@ -55,6 +62,9 @@ public class ResGuardStringBuilder {
         mReplaceStringBuffer.clear();
         mIsReplaced.clear();
         mIsWhiteList.clear();
+        mExtended = false;
+        mBlacklistPatterns = blacklistPatterns != null ? blacklistPatterns : new HashSet<>();
+        mRemovedStrings.clear();
 
         for (String str : mAToZ) {
             if (!Utils.match(str, blacklistPatterns)) {
@@ -90,6 +100,7 @@ public class ResGuardStringBuilder {
     // 对于某种类型用过的mapping，全部不能再用了
     public void removeStrings(Collection<String> collection) {
         if (collection == null) return;
+        mRemovedStrings.addAll(collection);
         mReplaceStringBuffer.removeAll(collection);
     }
 
@@ -111,7 +122,13 @@ public class ResGuardStringBuilder {
 
     public String getReplaceString(Collection<String> names) throws IllegalArgumentException {
         if (mReplaceStringBuffer.isEmpty()) {
-            throw new IllegalArgumentException("now can only obfuscation less than 35594 in a single type\n");
+            if (!mExtended) {
+                extendDictionary();
+            }
+            if (mReplaceStringBuffer.isEmpty()) {
+                throw new IllegalArgumentException("Resource name dictionary exhausted. " +
+                        "Consider reducing whitelist rules or using shorter names.");
+            }
         }
         if (names != null) {
             for (int i = 0; i < mReplaceStringBuffer.size(); i++) {
@@ -121,11 +138,34 @@ public class ResGuardStringBuilder {
                 }
                 return mReplaceStringBuffer.remove(i);
             }
+            // 所有候选都被排除，尝试扩展字典
+            if (!mExtended) {
+                extendDictionary();
+                return getReplaceString(names);
+            }
         }
         return mReplaceStringBuffer.remove(0);
     }
 
     public String getReplaceString() {
         return getReplaceString(null);
+    }
+
+    private void extendDictionary() {
+        mExtended = true;
+        for (String first : mAToZ) {
+            for (String second : mAToAll) {
+                for (String third : mAToAll) {
+                    for (String fourth : mAToAll) {
+                        String str = first + second + third + fourth;
+                        if (!mFileNameBlackList.contains(str)
+                                && !Utils.match(str, mBlacklistPatterns)
+                                && !mRemovedStrings.contains(str)) {
+                            mReplaceStringBuffer.add(str);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

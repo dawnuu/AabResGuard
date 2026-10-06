@@ -33,6 +33,15 @@ public class ResourcesTableBuilder {
     }
 
     /**
+     * 从已有 ResourceTable 构建，保留顶层字段（如 metadata）
+     */
+    public ResourcesTableBuilder(Resources.ResourceTable originalTable) {
+        table = originalTable.toBuilder().clearPackage();
+        resPackageMap = new HashMap<>();
+        resPackages = new ArrayList<>();
+    }
+
+    /**
      * 添加 package
      */
     public PackageBuilder addPackage(Resources.Package resPackage) {
@@ -48,7 +57,8 @@ public class ResourcesTableBuilder {
      * 生成 ResourceTable
      */
     public Resources.ResourceTable build() {
-        resPackageMap.entrySet().forEach(entry -> table.addPackage(entry.getValue().resPackageBuilder.build()));
+        table.clearPackage();
+        resPackageMap.values().forEach(builder -> table.addPackage(builder.resPackageBuilder.build()));
         return table.build();
     }
 
@@ -75,9 +85,7 @@ public class ResourcesTableBuilder {
                     "Package ID %s already in use.",
                     id);
 
-            resPackageBuilder = Resources.Package.newBuilder()
-                    .setPackageId(resPackage.getPackageId())
-                    .setPackageName(resPackage.getPackageName());
+            resPackageBuilder = resPackage.toBuilder().clearType();
         }
 
         /**
@@ -93,9 +101,7 @@ public class ResourcesTableBuilder {
 
         @NonNull
         Resources.Type.Builder addResourceType(@NonNull Resources.Type resType) {
-            Resources.Type.Builder typeBuilder = Resources.Type.newBuilder()
-                    .setName(resType.getName())
-                    .setTypeId(resType.getTypeId());
+            Resources.Type.Builder typeBuilder = resType.toBuilder().clearEntry();
             resPackageBuilder.addType(typeBuilder);
             return getResourceType(resType);
         }
