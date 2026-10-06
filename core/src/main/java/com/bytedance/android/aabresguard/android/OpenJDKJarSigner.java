@@ -37,49 +37,66 @@ public class OpenJDKJarSigner {
 
         File keyStorePasswordFile = null;
         File aliasPasswordFile = null;
+        File errorLog = null;
+        File outputLog = null;
 
-        // write passwords to a file so it cannot be spied on.
-        if (signature.storePassword != null) {
-            keyStorePasswordFile = File.createTempFile("store", "prv");
-            FileUtils.writeToFile(keyStorePasswordFile, signature.storePassword);
-            args.add("-storepass:file");
-            args.add(keyStorePasswordFile.getAbsolutePath());
-        }
+        try {
+            // write passwords to a file so it cannot be spied on.
+            if (signature.storePassword != null) {
+                keyStorePasswordFile = File.createTempFile("store", "prv");
+                FileUtils.writeToFile(keyStorePasswordFile, signature.storePassword);
+                args.add("-storepass:file");
+                args.add(keyStorePasswordFile.getAbsolutePath());
+            }
 
-        if (signature.keyPassword != null) {
-            aliasPasswordFile = File.createTempFile("alias", "prv");
-            FileUtils.writeToFile(aliasPasswordFile, signature.keyPassword);
-            args.add("--keypass:file");
-            args.add(aliasPasswordFile.getAbsolutePath());
-        }
+            if (signature.keyPassword != null) {
+                aliasPasswordFile = File.createTempFile("alias", "prv");
+                FileUtils.writeToFile(aliasPasswordFile, signature.keyPassword);
+                args.add("--keypass:file");
+                args.add(aliasPasswordFile.getAbsolutePath());
+            }
 
-        args.add(toBeSigned.getAbsolutePath());
+            args.add(toBeSigned.getAbsolutePath());
 
-        if (signature.keyAlias != null) {
-            args.add(signature.keyAlias);
-        }
+            if (signature.keyAlias != null) {
+                args.add(signature.keyAlias);
+            }
 
-        File errorLog = File.createTempFile("error", ".log");
-        File outputLog = File.createTempFile("output", ".log");
+            errorLog = File.createTempFile("error", ".log");
+            outputLog = File.createTempFile("output", ".log");
 
-        logger.fine("Invoking " + Joiner.on(" ").join(args));
-        Process process = start(new ProcessBuilder(args).redirectError(errorLog).redirectOutput(outputLog));
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            String errors = FileUtils.loadFileWithUnixLineSeparators(errorLog);
-            String output = FileUtils.loadFileWithUnixLineSeparators(outputLog);
-            throw new RuntimeException(
-                    String.format("%s failed with exit code %d: \n %s",
-                            jarSignerExecutable, exitCode,
-                            errors.trim().isEmpty() ? output : errors
-                    )
-            );
-        }
-        if (keyStorePasswordFile != null) {
-            keyStorePasswordFile.delete();
-        }
-        if (aliasPasswordFile != null) {
-            aliasPasswordFile.delete();
+            logger.fine("Invoking " + Joiner.on(" ").join(args));
+            Process process = start(new ProcessBuilder(args).redirectError(errorLog).redirectOutput(outputLog));
+            int exitCode;
+            try {
+                exitCode = process.waitFor();
+            } catch (InterruptedException e) {
+                process.destroyForcibly();
+                throw e;
+            }
+            if (exitCode != 0) {
+                String errors = FileUtils.loadFileWithUnixLineSeparators(errorLog);
+                String output = FileUtils.loadFileWithUnixLineSeparators(outputLog);
+                throw new RuntimeException(
+                        String.format("%s failed with exit code %d: \n %s",
+                                jarSignerExecutable, exitCode,
+                                errors.trim().isEmpty() ? output : errors
+                        )
+                );
+            }
+        } finally {
+            if (keyStorePasswordFile != null && !keyStorePasswordFile.delete()) {
+                keyStorePasswordFile.deleteOnExit();
+            }
+            if (aliasPasswordFile != null && !aliasPasswordFile.delete()) {
+                aliasPasswordFile.deleteOnExit();
+            }
+            if (errorLog != null && !errorLog.delete()) {
+                errorLog.deleteOnExit();
+            }
+            if (outputLog != null && !outputLog.delete()) {
+                outputLog.deleteOnExit();
+            }
         }
     }
 
