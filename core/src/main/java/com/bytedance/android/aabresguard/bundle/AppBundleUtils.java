@@ -76,7 +76,7 @@ public class AppBundleUtils {
     public static String getEntryNameByResourceName(String resourceName) {
         int index = resourceName.indexOf(".R.");
         String value = resourceName.substring(index + 3);
-        String[] values = value.replace(".", "/").split("/");
+        String[] values = value.split("\\.", 2);
         if (values.length != 2) {
             throw new RuntimeException("Invalid resource format, it should be package.type.entry, yours: " + resourceName);
         }
@@ -86,7 +86,7 @@ public class AppBundleUtils {
     public static String getTypeNameByResourceName(String resourceName) {
         int index = resourceName.indexOf(".R.");
         String value = resourceName.substring(index + 3);
-        String[] values = value.replace(".", "/").split("/");
+        String[] values = value.split("\\.", 2);
         if (values.length != 2) {
             throw new RuntimeException("Invalid resource format, it should be package.type.entry, yours: " + resourceName);
         }
