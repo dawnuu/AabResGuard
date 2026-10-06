@@ -17,7 +17,7 @@ publishing {
             project.shadow.component(publication)
             groupId GROUP_ID
 
-            artifactId ARTIFACT_ID
+            artifactId CORE_ARTIFACT_ID
             version VERSION
 
             artifact sourcesJar
