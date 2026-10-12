@@ -246,7 +246,8 @@ public abstract class ObfuscateBundleCommand {
                     getOutputPath().getParent(),
                     mappingPath,
                     getUseRandomName().orElse(false),
-                    getEnableMutateMd5().orElse(false)
+                    getEnableMutateMd5().orElse(false),
+                    getMutateMd5Seed().orElse("")
             );
             appBundle = obfuscator.obfuscate();
         }
@@ -357,6 +358,8 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Optional<Boolean> getEnableMutateMd5();
 
+    public abstract Optional<String> getMutateMd5Seed();
+
     public abstract Optional<Boolean> getEnableVirusTotalUpload();
 
     public abstract Optional<String> getVirusTotalApiKey();
@@ -405,6 +408,8 @@ public abstract class ObfuscateBundleCommand {
         public abstract Builder setUseRandomName(Boolean useRandomName);
 
         public abstract Builder setEnableMutateMd5(Boolean enableMutateMd5);
+
+        public abstract Builder setMutateMd5Seed(String seed);
 
         public abstract Builder setEnableVirusTotalUpload(Boolean enable);
 

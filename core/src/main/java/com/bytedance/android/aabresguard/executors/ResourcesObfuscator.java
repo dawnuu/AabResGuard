@@ -28,9 +28,12 @@ import com.google.common.io.ByteSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,6 +65,7 @@ public class ResourcesObfuscator {
     private final ZipFile bundleZipFile;
     private final boolean useRandomName;
     private final boolean enableMutateMd5;
+    private final String mutateMd5Seed;
     private final ResGuardStringBuilder mResGuardStringBuilder;
     private ResourcesMapping resourcesMapping;
     private final Random random = new Random();
@@ -90,7 +94,7 @@ public class ResourcesObfuscator {
         MEDIA_EXTENSIONS.add("avi");
     }
 
-    public ResourcesObfuscator(Path bundlePath, AppBundle rawAppBundle, Set<String> whiteListRules, Path outputLogLocationDir, Path mappingPath, boolean useRandomName, boolean enableMutateMd5) throws IOException {
+    public ResourcesObfuscator(Path bundlePath, AppBundle rawAppBundle, Set<String> whiteListRules, Path outputLogLocationDir, Path mappingPath, boolean useRandomName, boolean enableMutateMd5, String mutateMd5Seed) throws IOException {
         if (mappingPath != null && mappingPath.toFile().exists()) {
             resourcesMapping = new ResourcesMappingParser(mappingPath).parse();
         } else {
@@ -109,6 +113,7 @@ public class ResourcesObfuscator {
         this.whiteListRules = whiteListRules;
         this.useRandomName = useRandomName;
         this.enableMutateMd5 = enableMutateMd5;
+        this.mutateMd5Seed = mutateMd5Seed == null ? "" : mutateMd5Seed;
 
         // 全局唯一字典生成器
         this.mResGuardStringBuilder = new ResGuardStringBuilder();
@@ -260,7 +265,7 @@ public class ResourcesObfuscator {
                 byte[] data = AppBundleUtils.readByte(bundleZipFile, entry, bundleModule);
                 // 只有图片、音视频等媒体文件才修改 MD5
                 if (enableMutateMd5 && isMediaFile(bundleRawPath)) {
-                    data = mutateData(data);
+                    data = mutateData(bundleRawPath, data);
                 }
                 obfuscateEntries.add(entry.toBuilder()
                         .setPath(ZipPath.create(obfuscatedPath))
@@ -283,11 +288,23 @@ public class ResourcesObfuscator {
         return MEDIA_EXTENSIONS.contains(extension);
     }
 
-    private byte[] mutateData(byte[] data) {
+    /**
+     * Appends one byte to the media file. By default the byte is derived from
+     * seed + path + content, so identical input always yields identical output;
+     * change the seed to get a different result.
+     */
+    private byte[] mutateData(String path, byte[] data) {
         if (data == null || data.length == 0) return data;
         byte[] newData = new byte[data.length + 1];
         System.arraycopy(data, 0, newData, 0, data.length);
-        newData[data.length] = (byte) (random.nextInt(256));
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update((mutateMd5Seed + ":" + path + ":").getBytes(StandardCharsets.UTF_8));
+            digest.update(data);
+            newData[data.length] = digest.digest()[0];
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
         return newData;
     }
 

@@ -13,6 +13,8 @@ open class AabResGuardExtension {
 
     // MD5 mutation config
     var enableMutateMd5: Boolean = false
+    // Seed for the deterministic mutation; change it to get a different (but again stable) result
+    var mutateMd5Seed: String = ""
 
     // VirusTotal upload config
     var enableVirusTotalUpload: Boolean = false
@@ -78,6 +80,7 @@ open class AabResGuardExtension {
                 "\tmappingFile=$mappingFile\n" +
                 "\tuseRandomName=$useRandomName\n" +
                 "\tenableMutateMd5=$enableMutateMd5\n" +
+                "\tmutateMd5Seed=$mutateMd5Seed\n" +
                 "\tenableVirusTotalUpload=$enableVirusTotalUpload\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +
                 "\tobfuscatedBundleFileName=$obfuscatedBundleFileName\n" +

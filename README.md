@@ -154,6 +154,8 @@ aabResGuard {
     useRandomName = false
     // Append one random byte to media files to change their MD5; default: false
     enableMutateMd5 = false
+    // Mutation is stable by default (same input -> same bytes); change the seed to get a different result
+    mutateMd5Seed = ""
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
     // Enable file filtering; default: false
@@ -210,6 +212,8 @@ configure<AabResGuardExtension> {
     useRandomName = false
     // Append one random byte to media files to change their MD5; default: false
     enableMutateMd5 = false
+    // Mutation is stable by default (same input -> same bytes); change the seed to get a different result
+    mutateMd5Seed = ""
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
     // Enable file filtering; default: false
