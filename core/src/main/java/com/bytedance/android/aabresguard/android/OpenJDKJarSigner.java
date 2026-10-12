@@ -5,6 +5,8 @@ import com.google.common.base.Joiner;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -43,14 +45,14 @@ public class OpenJDKJarSigner {
         try {
             // write passwords to a file so it cannot be spied on.
             if (signature.storePassword != null) {
-                keyStorePasswordFile = File.createTempFile("store", "prv");
+                keyStorePasswordFile = createPrivateTempFile("store", "prv");
                 FileUtils.writeToFile(keyStorePasswordFile, signature.storePassword);
                 args.add("-storepass:file");
                 args.add(keyStorePasswordFile.getAbsolutePath());
             }
 
             if (signature.keyPassword != null) {
-                aliasPasswordFile = File.createTempFile("alias", "prv");
+                aliasPasswordFile = createPrivateTempFile("alias", "prv");
                 FileUtils.writeToFile(aliasPasswordFile, signature.keyPassword);
                 args.add("--keypass:file");
                 args.add(aliasPasswordFile.getAbsolutePath());
@@ -62,8 +64,8 @@ public class OpenJDKJarSigner {
                 args.add(signature.keyAlias);
             }
 
-            errorLog = File.createTempFile("error", ".log");
-            outputLog = File.createTempFile("output", ".log");
+            errorLog = createPrivateTempFile("error", ".log");
+            outputLog = createPrivateTempFile("output", ".log");
 
             logger.fine("Invoking " + Joiner.on(" ").join(args));
             Process process = start(new ProcessBuilder(args).redirectError(errorLog).redirectOutput(outputLog));
@@ -97,6 +99,26 @@ public class OpenJDKJarSigner {
             if (outputLog != null && !outputLog.delete()) {
                 outputLog.deleteOnExit();
             }
+        }
+    }
+
+    /**
+     * Creates a temp file readable and writable by the current user only, so that
+     * passwords and signer output cannot be read by other users of a shared machine.
+     * The permissions are applied at creation time on POSIX file systems.
+     */
+    private static File createPrivateTempFile(String prefix, String suffix) throws IOException {
+        try {
+            return Files.createTempFile(prefix, suffix,
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))).toFile();
+        } catch (UnsupportedOperationException e) {
+            // non-POSIX file system (e.g. Windows): restrict access through the File API
+            File file = File.createTempFile(prefix, suffix);
+            file.setReadable(false, false);
+            file.setWritable(false, false);
+            file.setReadable(true, true);
+            file.setWritable(true, true);
+            return file;
         }
     }
 
