@@ -44,45 +44,44 @@ public class FileOperation {
         return true;
     }
 
+    /**
+     * Extracts the zip into targetDir. An existing targetDir is deleted first,
+     * so the result never contains stale files from a previous extraction.
+     */
     public static void uncompress(Path uncompressedFile, Path targetDir) throws IOException {
         checkFileExistsAndReadable(uncompressedFile);
         if (Files.exists(targetDir)) {
-            targetDir.toFile().delete();
-        } else {
-            FileUtils.createDirectories(targetDir);
+            deleteDir(targetDir.toFile());
         }
-        ZipFile zipFile = new ZipFile(uncompressedFile.toFile());
-        Enumeration emu = zipFile.entries();
-        try {
-            while (emu.hasMoreElements()) {
-                ZipEntry entry = (ZipEntry) emu.nextElement();
+        FileUtils.createDirectories(targetDir);
+        Path targetRoot = targetDir.toAbsolutePath().normalize();
+        try (ZipFile zipFile = new ZipFile(uncompressedFile.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            byte[] buf = new byte[BUFFER];
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                // guard against Zip Slip: the entry must stay inside targetDir
+                Path entryPath = targetRoot.resolve(entry.getName()).normalize();
+                if (!entryPath.startsWith(targetRoot)) {
+                    throw new IOException("Illegal zip entry path: " + entry.getName());
+                }
                 if (entry.isDirectory()) {
-                    FileUtils.createDirectories(new File(targetDir.toFile(), entry.getName()).toPath());
+                    FileUtils.createDirectories(entryPath);
                     continue;
                 }
-                BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
-
-                File file = new File(targetDir.toFile() + File.separator + entry.getName());
-
+                File file = entryPath.toFile();
                 File parent = file.getParentFile();
-                if (parent != null && (!parent.exists())) {
+                if (parent != null && !parent.exists()) {
                     FileUtils.createDirectories(parent.toPath());
                 }
-
-                FileOutputStream fos = new FileOutputStream(file);
-                BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER);
-
-                byte[] buf = new byte[BUFFER];
-                int len;
-                while ((len = bis.read(buf, 0, BUFFER)) != -1) {
-                    fos.write(buf, 0, len);
+                try (BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+                     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file), BUFFER)) {
+                    int len;
+                    while ((len = bis.read(buf, 0, BUFFER)) != -1) {
+                        bos.write(buf, 0, len);
+                    }
                 }
-                bos.flush();
-                bos.close();
-                bis.close();
             }
-        } finally {
-            zipFile.close();
         }
     }
 
