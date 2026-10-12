@@ -25,7 +25,7 @@ public class StringFilterXmlParser {
 
     public StringFilterConfig parse() throws DocumentException {
         StringFilterConfig config = new StringFilterConfig();
-        SAXReader reader = new SAXReader();
+        SAXReader reader = SecureSaxReader.create();
         Document doc = reader.read(configPath.toFile());
         Element root = doc.getRootElement();
 

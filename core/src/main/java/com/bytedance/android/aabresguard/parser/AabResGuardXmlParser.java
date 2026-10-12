@@ -26,7 +26,7 @@ public class AabResGuardXmlParser {
 
     public AabResGuardConfig parse() throws DocumentException {
         AabResGuardConfig aabResGuardConfig = new AabResGuardConfig();
-        SAXReader reader = new SAXReader();
+        SAXReader reader = SecureSaxReader.create();
         Document doc = reader.read(configPath.toFile());
         Element root = doc.getRootElement();
         for (Iterator i = root.elementIterator("issue"); i.hasNext(); ) {
