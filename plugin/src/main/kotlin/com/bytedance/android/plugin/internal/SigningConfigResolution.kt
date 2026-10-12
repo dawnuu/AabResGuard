@@ -39,6 +39,7 @@ internal fun getSigningConfig(project: Project, variant: ApplicationVariant): Si
 
         SigningConfig(storeFile, storePassword, keyAlias, keyPassword)
     } catch (e: Exception) {
+        project.logger.warn("AabResGuard: failed to read the signing config of variant ${variant.name}: $e")
         SigningConfig(null, null, null, null)
     }
 }

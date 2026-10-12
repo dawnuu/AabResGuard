@@ -13,6 +13,10 @@ open class AabResGuardExtension {
 
     // MD5 mutation config
     var enableMutateMd5: Boolean = false
+
+    // false: fail the build when no usable signing config is found.
+    // true: fall back to the debug keystore (only for testing, never for release)
+    var allowDebugSignFallback: Boolean = false
     // Seed for the deterministic mutation; change it to get a different (but again stable) result
     var mutateMd5Seed: String = ""
 
@@ -80,6 +84,7 @@ open class AabResGuardExtension {
                 "\tmappingFile=$mappingFile\n" +
                 "\tuseRandomName=$useRandomName\n" +
                 "\tenableMutateMd5=$enableMutateMd5\n" +
+                "\tallowDebugSignFallback=$allowDebugSignFallback\n" +
                 "\tmutateMd5Seed=$mutateMd5Seed\n" +
                 "\tenableVirusTotalUpload=$enableVirusTotalUpload\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +

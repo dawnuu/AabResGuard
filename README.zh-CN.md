@@ -152,6 +152,8 @@ aabResGuard {
     enableMutateMd5 = false
     // 默认稳定修改（相同输入得到相同结果）；改变种子可得到另一份稳定结果
     mutateMd5Seed = ""
+    // 找不到签名配置时是否回退到 debug 签名，默认 false（直接构建失败）
+    allowDebugSignFallback = false
     // 是否允许去除重复资源，默认 false
     mergeDuplicatedRes = true
     // 是否允许过滤文件，默认 false

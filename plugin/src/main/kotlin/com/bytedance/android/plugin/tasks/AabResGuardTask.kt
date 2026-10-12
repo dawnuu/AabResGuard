@@ -7,6 +7,7 @@ import com.bytedance.android.plugin.internal.getBundleFilePath
 import com.bytedance.android.plugin.internal.getSigningConfig
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.logging.text.StyledTextOutput.Style
@@ -93,11 +94,30 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             command.setMappingPath(aabResGuard.mappingFile)
         }
 
-        if (signingConfig.storeFile != null && signingConfig.storeFile!!.exists()) {
-            command.setStoreFile(signingConfig.storeFile!!.toPath())
+        val storeFile = signingConfig.storeFile
+        if (storeFile != null && storeFile.exists()) {
+            if (signingConfig.storePassword == null || signingConfig.keyAlias == null || signingConfig.keyPassword == null) {
+                throw GradleException(
+                    "The signing config of variant $variantName is incomplete: storePassword, keyAlias and keyPassword are required."
+                )
+            }
+            command.setStoreFile(storeFile.toPath())
                 .setKeyAlias(signingConfig.keyAlias)
                 .setKeyPassword(signingConfig.keyPassword)
                 .setStorePassword(signingConfig.storePassword)
+        } else {
+            val reason = if (storeFile == null) "no signing config was found"
+            else "the keystore does not exist: ${storeFile.absolutePath}"
+            if (!aabResGuard.allowDebugSignFallback) {
+                throw GradleException(
+                    "Cannot sign the bundle of variant $variantName: $reason. " +
+                        "Configure a signingConfig for this variant, or set aabResGuard.allowDebugSignFallback = true " +
+                        "to sign with the debug keystore (do not publish such a bundle)."
+                )
+            }
+            out.style(Style.Error).println(
+                "WARNING: $reason, signing the bundle with the DEBUG keystore. Do not publish this bundle."
+            )
         }
         command.build().execute()
     }

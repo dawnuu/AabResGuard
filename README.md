@@ -156,6 +156,8 @@ aabResGuard {
     enableMutateMd5 = false
     // Mutation is stable by default (same input -> same bytes); change the seed to get a different result
     mutateMd5Seed = ""
+    // Sign with the debug keystore when no signing config is found; default: false (the build fails instead)
+    allowDebugSignFallback = false
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
     // Enable file filtering; default: false
