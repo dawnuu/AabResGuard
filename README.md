@@ -160,6 +160,10 @@ aabResGuard {
     allowDebugSignFallback = false
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
+    // Losslessly optimize PNG/JPEG/GIF/static WebP; default: false
+    enableCompressImages = false
+    // Optional override; empty uses tools bundled in the JAR
+    imageCompressionToolsDir = ""
     // Enable file filtering; default: false
     enableFilterFiles = true
     // Enable string filtering; default: false
@@ -223,6 +227,8 @@ configure<AabResGuardExtension> {
     mutateMd5Seed = ""
     // Remove duplicate resources; default: false
     mergeDuplicatedRes = true
+    enableCompressImages = false
+    imageCompressionToolsDir = ""
     // Enable file filtering; default: false
     enableFilterFiles = true
     // Enable string filtering; default: false
@@ -301,6 +307,24 @@ val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 ```
 
 ---
+
+### Lossless image compression
+
+Optionally set `imageCompressionCacheDir = rootProject.file("custom-cache/images").toPath()` to choose another cache directory. Leave it unset for the default. Choose a location outside `build/` to preserve results across `clean`.
+
+The Gradle plugin caches successful results in `.gradle/aabresguard/image-cache/` under the project root; `gradlew clean` preserves this directory. Each build reads the original image and inserts cached bytes into the new AAB when image content, compression arguments, tool contents and platform match. Source files are unchanged. Results that do not shrink are also cached; failures are not. The `cached` summary field counts hits. Corrupt entries are recompressed, and cache I/O failures warn and allow compression to continue. Delete this directory to force recompression. The CLI does not enable persistent caching by default.
+
+Set `enableCompressImages = true` to optimize PNG, JPG/JPEG, GIF (including animations), and static WebP in every module's `res/` and `assets/` directories. Images retain their formats, paths, resolution and visual quality, with metadata supported by the tools preserved. Only smaller results replace the originals. Already optimized images may not shrink; decoded memory usage usually stays the same.
+
+Native tools are bundled in the JAR; no installation, runtime download or directory configuration is needed. Supported platforms: macOS ARM64 (Apple Silicon)/x86_64 (Intel), Windows x86_64 and Linux x86_64 (glibc, not Alpine/musl). Tools are extracted into a private per-run temporary directory and verified with SHA-256, then cleaned up after processing. No tools are extracted when compression is disabled.
+
+Leave `imageCompressionToolsDir` empty to use bundled tools. Set it only to override versions or use another platform, e.g. `imageCompressionToolsDir = "/opt/homebrew/bin"`. Blocked, missing, failed or timed-out tools emit `[AabResGuard WARNING]`, retain original images and allow obfuscation and packaging to continue. Once a format fails, further images of that format are left unchanged for that run to avoid repeated launches and warnings. Temporary directory creation/cleanup failures also warn; explicit task interruption still propagates.
+
+On macOS, extraction sets execution permission for the current user. The bundled tools run on the tested Apple Silicon Mac, but are not Developer ID-signed and Apple-notarized; other Gatekeeper or managed security policies may block them. Launch failures or killed processes include a macOS diagnostic hint. For public distribution, follow [Apple's signing and notarization workflow](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution); restricted build machines can use `imageCompressionToolsDir` to select tools already approved for execution.
+
+Nine-patch images (including compiled Android `np*` chunks), APNG, and animated WebP are skipped and logged. Other formats, such as BMP and SVG, are unchanged. The summary reports optimized, unchanged, skipped and failed image counts and saved image bytes; actual AAB savings also depend on ZIP compression. Optimization runs before resource obfuscation and MD5 mutation.
+
+CLI: add `--compress-images=true`; `--image-compression-tools-dir` is an optional override. Enable this feature through Gradle or CLI flags; XML configuration is not supported yet. See [bundled tool notices](core/src/main/resources/image-tools/NOTICE.md) for versions, origins, licenses and regeneration instructions.
 
 ### 2. Command-line tool
 

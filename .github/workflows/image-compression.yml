@@ -1,0 +1,39 @@
+name: Bundled image compression
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-tools:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - name: Verify bundled tools, pixels and AAB pipeline
+        shell: bash
+        run: bash ./gradlew :core:test :core:shadowJar :plugin:compileKotlin --console=plain
+      - name: Verify standalone JAR without external tool paths
+        shell: bash
+        run: |
+          for jar_path in core/build/libs/AabResGuard*.jar; do
+            "$JAVA_HOME/bin/java" -cp "$jar_path" scripts/SmokeImageTools.java
+          done
+      - name: Save test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-compression-tests-${{ matrix.os }}
+          path: core/build/reports/tests/test

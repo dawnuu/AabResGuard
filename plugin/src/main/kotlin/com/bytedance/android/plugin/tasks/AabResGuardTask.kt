@@ -98,6 +98,10 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             .setBundlePath(bundlePath)
             .setOutputPath(obfuscatedBundlePath)
             .setMergeDuplicatedResources(aabResGuard.mergeDuplicatedRes)
+            .setEnableCompressImages(aabResGuard.enableCompressImages)
+            .setImageCompressionToolsDir(aabResGuard.imageCompressionToolsDir)
+            .setImageCompressionCacheDir(aabResGuard.imageCompressionCacheDir
+                ?: project.rootDir.resolve(".gradle/aabresguard/image-cache").toPath())
             .setWhiteList(aabResGuard.whiteList)
             .setBundleMetaDataWhiteList(aabResGuard.bundleMetaDataWhiteList)
             .setFilterFile(aabResGuard.enableFilterFiles)

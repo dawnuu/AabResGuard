@@ -16,6 +16,7 @@ import com.bytedance.android.aabresguard.executors.BaseRootFileRemove;
 import com.bytedance.android.aabresguard.executors.BundleFileFilter;
 import com.bytedance.android.aabresguard.executors.BundleMetadataRemove;
 import com.bytedance.android.aabresguard.executors.BundleStringFilter;
+import com.bytedance.android.aabresguard.executors.BundleImageCompressor;
 import com.bytedance.android.aabresguard.executors.DuplicatedResourcesMerger;
 import com.bytedance.android.aabresguard.executors.ResourcesObfuscator;
 import com.bytedance.android.aabresguard.model.xml.AabResGuardConfig;
@@ -55,6 +56,8 @@ public abstract class ObfuscateBundleCommand {
     private static final Flag<Path> MAPPING_FLAG = Flag.path("mapping");
 
     private static final Flag<Boolean> MERGE_DUPLICATED_RES_FLAG = Flag.booleanFlag("merge-duplicated-res");
+    private static final Flag<Boolean> COMPRESS_IMAGES_FLAG = Flag.booleanFlag("compress-images");
+    private static final Flag<String> IMAGE_TOOLS_DIR_FLAG = Flag.string("image-compression-tools-dir");
     private static final Flag<Boolean> REMOVE_BUNDLE_METADATA_FLAG = Flag.booleanFlag("remove-bundle-metadata");
     private static final Flag<Boolean> REMOVE_ROOT_FILES_FLAG = Flag.booleanFlag("remove-root-files");
 
@@ -104,6 +107,18 @@ public abstract class ObfuscateBundleCommand {
                                 .setExampleValue("merge-duplicated-res=true")
                                 .setOptional(true)
                                 .setDescription("If set, the duplicate resource files will be removed.")
+                                .build())
+                .addFlag(
+                        CommandHelp.FlagDescription.builder()
+                                .setFlagName(COMPRESS_IMAGES_FLAG.getName())
+                                .setOptional(true)
+                                .setDescription("Losslessly optimize PNG, JPEG, GIF and static WebP using bundled native tools.")
+                                .build())
+                .addFlag(
+                        CommandHelp.FlagDescription.builder()
+                                .setFlagName(IMAGE_TOOLS_DIR_FLAG.getName())
+                                .setOptional(true)
+                                .setDescription("Optional directory overriding bundled optipng, jpegtran, cwebp and gifsicle.")
                                 .build())
                 .addFlag(
                         CommandHelp.FlagDescription.builder()
@@ -184,6 +199,8 @@ public abstract class ObfuscateBundleCommand {
         builder.setBundleMetaDataWhiteList(new HashSet<>());
 
         MERGE_DUPLICATED_RES_FLAG.getValue(flags).ifPresent(builder::setMergeDuplicatedResources);
+        COMPRESS_IMAGES_FLAG.getValue(flags).ifPresent(builder::setEnableCompressImages);
+        IMAGE_TOOLS_DIR_FLAG.getValue(flags).ifPresent(builder::setImageCompressionToolsDir);
 
         DISABLE_SIGN_FLAG.getValue(flags).ifPresent(builder::setDisableSign);
         STORE_FILE_FLAG.getValue(flags).ifPresent(builder::setStoreFile);
@@ -231,6 +248,12 @@ public abstract class ObfuscateBundleCommand {
         if (getMergeDuplicatedResources().isPresent() && getMergeDuplicatedResources().get()) {
             DuplicatedResourcesMerger merger = new DuplicatedResourcesMerger(getBundlePath(), appBundle, getOutputPath().getParent());
             appBundle = merger.merge();
+        }
+
+        // Compress before obfuscation/MD5 mutation, preserving original image names for exclusions.
+        if (getEnableCompressImages().orElse(false)) {
+            appBundle = new BundleImageCompressor(getImageCompressionToolsDir().orElse(""),
+                    getImageCompressionCacheDir().orElse(null)).compress(appBundle);
         }
 
         // obfuscate bundle
@@ -334,6 +357,12 @@ public abstract class ObfuscateBundleCommand {
 
     public abstract Optional<Boolean> getMergeDuplicatedResources();
 
+    public abstract Optional<Boolean> getEnableCompressImages();
+
+    public abstract Optional<String> getImageCompressionToolsDir();
+
+    public abstract Optional<Path> getImageCompressionCacheDir();
+
     public abstract Optional<Boolean> getRemoveRootFiles();
 
     public abstract Optional<Boolean> getRemoveBundleMetadata();
@@ -394,6 +423,12 @@ public abstract class ObfuscateBundleCommand {
         public abstract Builder setMappingPath(Path configPath);
 
         public abstract Builder setMergeDuplicatedResources(Boolean mergeDuplicatedResources);
+
+        public abstract Builder setEnableCompressImages(Boolean enable);
+
+        public abstract Builder setImageCompressionToolsDir(String directory);
+
+        public abstract Builder setImageCompressionCacheDir(Path directory);
 
         public abstract Builder setDisableSign(Boolean disableSign);
 

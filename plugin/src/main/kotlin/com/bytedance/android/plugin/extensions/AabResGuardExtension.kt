@@ -10,6 +10,11 @@ open class AabResGuardExtension {
     var enableObfuscate: Boolean = true
     var mappingFile: Path? = null
     var useRandomName: Boolean = false
+    var enableCompressImages: Boolean = false
+    // Empty means use the bundled native tools; set only to override them.
+    var imageCompressionToolsDir: String = ""
+    // Null uses the root project's .gradle/aabresguard/image-cache directory.
+    var imageCompressionCacheDir: Path? = null
 
     // MD5 mutation config
     var enableMutateMd5: Boolean = false
@@ -86,6 +91,9 @@ open class AabResGuardExtension {
                 "\tenableObfuscate=$enableObfuscate\n" +
                 "\tmappingFile=$mappingFile\n" +
                 "\tuseRandomName=$useRandomName\n" +
+                "\tenableCompressImages=$enableCompressImages\n" +
+                "\timageCompressionToolsDir=$imageCompressionToolsDir\n" +
+                "\timageCompressionCacheDir=$imageCompressionCacheDir\n" +
                 "\tenableMutateMd5=$enableMutateMd5\n" +
                 "\tallowDebugSignFallback=$allowDebugSignFallback\n" +
                 "\tmutateMd5Seed=$mutateMd5Seed\n" +

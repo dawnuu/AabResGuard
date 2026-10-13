@@ -156,6 +156,10 @@ aabResGuard {
     allowDebugSignFallback = false
     // 是否允许去除重复资源，默认 false
     mergeDuplicatedRes = true
+    // 无损压缩 PNG/JPEG/GIF/静态 WebP，默认 false
+    enableCompressImages = false
+    // 可选：覆盖内置压缩工具；留空使用随 JAR 打包的工具
+    imageCompressionToolsDir = ""
     // 是否允许过滤文件，默认 false
     enableFilterFiles = true
     // 是否允许过滤文案，默认 false
@@ -219,6 +223,8 @@ configure<AabResGuardExtension> {
     mutateMd5Seed = ""
     // 是否允许去除重复资源，默认 false
     mergeDuplicatedRes = true
+    enableCompressImages = false
+    imageCompressionToolsDir = ""
     // 是否允许过滤文件，默认 false
     enableFilterFiles = true
     // 是否允许过滤文案，默认 false
@@ -297,6 +303,24 @@ val bundlePath: Path = aabResGuardPlugin.obfuscatedBundlePath()
 ```
 
 ---
+
+### 图片无损压缩
+
+可选配置 `imageCompressionCacheDir = rootProject.file("custom-cache/images").toPath()` 来指定其他缓存目录；默认不需要设置。若希望 `clean` 后仍可复用，请选择 `build/` 之外的目录。
+
+Gradle 插件自动将成功的压缩结果缓存在项目根目录的 `.gradle/aabresguard/image-cache/`，`gradlew clean` 不会清除它。每次打包仍会读取原图；内容相同且压缩参数、工具内容和平台未改变时，直接将缓存图片写入新的 AAB，不修改源文件。不再缩小的结果也会缓存，压缩失败则不缓存。日志中的 `cached` 表示命中次数。缓存损坏时重新压缩，缓存读写失败时警告并继续；需要强制重新压缩时删除该目录即可。命令行默认不使用持久缓存。
+
+设置 `enableCompressImages = true`，即可处理所有模块 `res/` 和 `assets/` 下的 PNG、JPG/JPEG、GIF（含动画）和静态 WebP。保持原格式和路径，不降低分辨率或画质，保留工具支持的元数据；仅当文件变小时替换。已优化的图片可能不再缩小，解码后的内存占用通常不变。
+
+压缩工具已随 JAR 打包，无需额外安装、下载或配置目录。支持 macOS ARM64（Apple Silicon）/x86_64（Intel）、Windows x86_64 和 Linux x86_64（glibc，非 Alpine/musl）。运行时自动选择平台，在本次处理的临时目录解压并校验 SHA-256，处理结束后清理。关闭图片压缩时不会解压工具。
+
+`imageCompressionToolsDir` 默认为空，表示使用内置工具；仅在需要覆盖工具版本或使用其他平台时设置，例如 `imageCompressionToolsDir = "/opt/homebrew/bin"`。压缩工具被系统阻止、缺失、失败或超时时，输出 `[AabResGuard WARNING]` 警告，保留原图并继续混淆和打包。同一格式失败后，本次处理跳过该格式后续压缩，避免重复启动和警告。临时目录创建或清理失败也只输出警告；主动取消任务仍会中断。
+
+macOS：程序会设置当前用户的执行权限，已在 Apple Silicon Mac 上验证内置工具运行，但工具尚未使用 Developer ID 签名并通过 Apple 公证，不能保证所有 Gatekeeper/企业策略环境都允许执行。无法启动或被系统终止时，会输出 macOS 检查提示。公开分发前可按 [Apple 的签名与公证流程](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)处理工具；受限构建机也可用 `imageCompressionToolsDir` 指向已获准运行的工具。
+
+Nine-patch（包括带 Android `np*` 块的编译图片）、APNG 和动画 WebP 会跳过并记录。其他格式（如 BMP、SVG）保持原样。日志输出优化数量、未缩小数量、跳过数量、因失败保留原图的数量和节省字节数；该字节数是图片文件大小差值，最终 AAB 大小还受 ZIP 压缩影响。压缩在资源混淆及 MD5 修改之前执行。
+
+命令行只需增加 `--compress-images=true`；`--image-compression-tools-dir` 是可选覆盖参数。此功能通过命令行参数或 Gradle 配置启用，XML 配置暂不支持。工具版本、来源、许可证及重新生成方法见 [内置工具说明](core/src/main/resources/image-tools/NOTICE.md)。
 
 ### 二、命令行工具
 

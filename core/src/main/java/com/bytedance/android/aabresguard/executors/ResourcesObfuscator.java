@@ -48,7 +48,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipFile;
 
 /**
  * Created by YangJing on 2019/10/14 .
@@ -62,7 +61,6 @@ public class ResourcesObfuscator {
     private final AppBundle rawAppBundle;
     private final Set<String> whiteListRules;
     private final Path outputMappingPath;
-    private final ZipFile bundleZipFile;
     private final boolean useRandomName;
     private final boolean enableMutateMd5;
     private final String mutateMd5Seed;
@@ -100,8 +98,6 @@ public class ResourcesObfuscator {
         } else {
             resourcesMapping = new ResourcesMapping();
         }
-
-        this.bundleZipFile = new ZipFile(bundlePath.toFile());
 
         outputMappingPath = new File(outputLogLocationDir.toFile(), FILE_MAPPING_NAME).toPath();
         if (Files.exists(outputMappingPath, new LinkOption[0])) {
@@ -262,7 +258,7 @@ public class ResourcesObfuscator {
             String bundleRawPath = bundleModule.getName().getName() + "/" + entry.getPath().toString();
             String obfuscatedPath = obfuscatedEntryMap.get(bundleRawPath);
             if (obfuscatedPath != null) {
-                byte[] data = AppBundleUtils.readByte(bundleZipFile, entry, bundleModule);
+                byte[] data = entry.getContent().read();
                 // 只有图片、音视频等媒体文件才修改 MD5
                 if (enableMutateMd5 && isMediaFile(bundleRawPath)) {
                     data = mutateData(bundleRawPath, data);

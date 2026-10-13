@@ -30,7 +30,13 @@ dependencies {
     implementation "com.google.auto.value:auto-value:1.5.4"
     shadow group: 'org.dom4j', name: 'dom4j', version: '2.1.4'
     shadow "com.android.tools.build:bundletool:1.18.3"
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation "com.android.tools.build:aapt2-proto:7.3.0-8691043"
 }
+
+configurations.testImplementation.extendsFrom(configurations.shadow)
+// Match the protobuf runtime shipped by shadowJar/bundletool, rather than the compiler's 4.x API.
+configurations.testRuntimeClasspath.resolutionStrategy.force 'com.google.protobuf:protobuf-java:3.22.3'
 
 protobuf {
     protoc {
