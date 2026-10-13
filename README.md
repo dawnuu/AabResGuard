@@ -183,7 +183,12 @@ aabResGuard {
     ]
 
     // Obfuscated output name; it must end with .aab
-    // Default: {packageName}_{versionName}_{versionCode}.aab
+    // Placeholders: {applicationId} {versionName} {versionCode} {variantName} {buildTime}
+    // e.g. "{applicationId}_{versionName}_{buildTime}.aab"
+    // Override from outside: -PaabResGuard.fileName="{applicationId}_{channel}.aab"
+    // and -PaabResGuard.var.channel=google (command line or gradle.properties; wins over this file)
+    // Custom variables, e.g. fileNameVariables = [channel: "google"] -> "{applicationId}_{channel}.aab"
+    // Default: {applicationId}_{versionName}_{versionCode}.aab
     obfuscatedBundleFileName = "duplicated-app.aab"
 
     // File filtering rules
@@ -241,7 +246,12 @@ configure<AabResGuardExtension> {
     )
 
     // Obfuscated output name; it must end with .aab
-    // Default: {packageName}_{versionName}_{versionCode}.aab
+    // Placeholders: {applicationId} {versionName} {versionCode} {variantName} {buildTime}
+    // e.g. "{applicationId}_{versionName}_{buildTime}.aab"
+    // Override from outside: -PaabResGuard.fileName="{applicationId}_{channel}.aab"
+    // and -PaabResGuard.var.channel=google (command line or gradle.properties; wins over this file)
+    // Custom variables, e.g. fileNameVariables = [channel: "google"] -> "{applicationId}_{channel}.aab"
+    // Default: {applicationId}_{versionName}_{versionCode}.aab
     obfuscatedBundleFileName = "duplicated-app.aab"
 
     // File filtering rules

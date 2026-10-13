@@ -69,6 +69,9 @@ open class AabResGuardExtension {
 
     var bundleMetaDataWhiteList: Set<String>? = HashSet()
     var obfuscatedBundleFileName: String = ""
+
+    // Custom variables usable in obfuscatedBundleFileName as {name}; they override built-in ones
+    var fileNameVariables: Map<String, String> = emptyMap()
     var mergeDuplicatedRes: Boolean = false
     var enableFilterFiles: Boolean = false
     var filterList: Set<String>? = HashSet()
@@ -89,6 +92,7 @@ open class AabResGuardExtension {
                 "\tenableVirusTotalUpload=$enableVirusTotalUpload\n" +
                 "\twhiteList=${if (whiteList == null) null else whiteList}\n" +
                 "\tobfuscatedBundleFileName=$obfuscatedBundleFileName\n" +
+                "\tfileNameVariables=${fileNameVariables.keys}\n" +
                 "\tmergeDuplicatedRes=$mergeDuplicatedRes\n" +
                 "\tenableFilterFiles=$enableFilterFiles\n" +
                 "\tenableFilterStrings=$enableFilterStrings\n" +

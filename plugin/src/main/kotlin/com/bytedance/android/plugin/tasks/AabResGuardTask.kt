@@ -5,6 +5,7 @@ import com.bytedance.android.aabresguard.commands.ObfuscateBundleCommand
 import com.bytedance.android.plugin.extensions.AabResGuardExtension
 import com.bytedance.android.plugin.internal.getBundleFilePath
 import com.bytedance.android.plugin.internal.getSigningConfig
+import com.bytedance.android.plugin.internal.resolveBundleFileName
 import com.bytedance.android.plugin.model.SigningConfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -14,6 +15,8 @@ import org.gradle.internal.logging.text.StyledTextOutput.Style
 import org.gradle.internal.logging.text.StyledTextOutputFactory
 import java.io.File
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFactory) :
@@ -60,8 +63,28 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
                 ?: "unspecified"
         val versionCode = currentVariant.outputs.firstOrNull()?.versionCode?.getOrElse(0) ?: 0
 
-        val aabName = aabResGuard.obfuscatedBundleFileName.ifBlank {
+        // the default name is kept exactly as before; only a configured template is expanded
+        // external overrides (-P / gradle.properties) win over build.gradle
+        val fileNameTemplate = (project.findProperty(FILE_NAME_PROPERTY) as? String)
+            ?.takeIf { it.isNotBlank() } ?: aabResGuard.obfuscatedBundleFileName
+        val externalVariables = project.properties
+            .filterKeys { it.startsWith(VARIABLE_PROPERTY_PREFIX) }
+            .mapKeys { it.key.removePrefix(VARIABLE_PROPERTY_PREFIX) }
+            .mapValues { it.value.toString() }
+
+        val aabName = if (fileNameTemplate.isBlank()) {
             "${applicationId}_${versionName}_${versionCode}.aab"
+        } else {
+            resolveBundleFileName(
+                fileNameTemplate,
+                mapOf(
+                    "applicationId" to applicationId,
+                    "versionName" to versionName,
+                    "versionCode" to versionCode.toString(),
+                    "variantName" to variantName,
+                    "buildTime" to LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+                ) + aabResGuard.fileNameVariables + externalVariables
+            )
         }
         val obfuscatedBundlePath = File(bundlePath.toFile().parentFile, aabName).toPath()
 
@@ -120,6 +143,11 @@ open class AabResGuardTask @Inject constructor(outputFactory: StyledTextOutputFa
             )
         }
         command.build().execute()
+    }
+
+    private companion object {
+        const val FILE_NAME_PROPERTY = "aabResGuard.fileName"
+        const val VARIABLE_PROPERTY_PREFIX = "aabResGuard.var."
     }
 
     private fun prepareUnusedFile(name: String) {

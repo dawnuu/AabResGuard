@@ -179,7 +179,12 @@ aabResGuard {
     ]
 
     // 混淆后的文件名称，必须以 .aab 结尾
-    // 默认文件名为: {packageName}_{versionName}_{versionCode}.aab
+    // 支持变量: {applicationId} {versionName} {versionCode} {variantName} {buildTime}
+    // 例如 "{applicationId}_{versionName}_{buildTime}.aab"
+    // 外部覆盖: -PaabResGuard.fileName="{applicationId}_{channel}.aab"
+    // 以及 -PaabResGuard.var.channel=google（命令行或 gradle.properties，优先于本文件）
+    // 自定义变量，例如 fileNameVariables = [channel: "google"] -> "{applicationId}_{channel}.aab"
+    // 默认文件名为: {applicationId}_{versionName}_{versionCode}.aab
     obfuscatedBundleFileName = "duplicated-app.aab"
 
     // 文件过滤规则
@@ -237,7 +242,12 @@ configure<AabResGuardExtension> {
     )
 
     // 混淆后的文件名称，必须以 .aab 结尾
-    // 默认文件名为: {packageName}_{versionName}_{versionCode}.aab
+    // 支持变量: {applicationId} {versionName} {versionCode} {variantName} {buildTime}
+    // 例如 "{applicationId}_{versionName}_{buildTime}.aab"
+    // 外部覆盖: -PaabResGuard.fileName="{applicationId}_{channel}.aab"
+    // 以及 -PaabResGuard.var.channel=google（命令行或 gradle.properties，优先于本文件）
+    // 自定义变量，例如 fileNameVariables = [channel: "google"] -> "{applicationId}_{channel}.aab"
+    // 默认文件名为: {applicationId}_{versionName}_{versionCode}.aab
     obfuscatedBundleFileName = "duplicated-app.aab"
 
     // 文件过滤规则
