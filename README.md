@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **Migration notice: use the new [AndResGuard](https://github.com/dawnuu/AndResGuard) project.**
+> The new project supports resource processing for both AAB and APK. See the [migration guide](https://github.com/dawnuu/AndResGuard/blob/codex/apk-support/README.md#migration-guide) for integration and configuration.
+
 # AabResGuard
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -171,7 +175,8 @@ aabResGuard {
     // Remove BUNDLE-METADATA; default: true
     removeBundleMetadata = true
     // Remove files in the root directory; default: false
-    removeRootFiles = true
+    // Test application stability yourself before enabling this option
+    removeRootFiles = false
     // Keep matching BUNDLE-METADATA files when removeBundleMetadata is true
     bundleMetaDataWhiteList = [
         "com.example.metadata"
@@ -236,7 +241,8 @@ configure<AabResGuardExtension> {
     // Remove BUNDLE-METADATA; default: true
     removeBundleMetadata = true
     // Remove files in the root directory; default: false
-    removeRootFiles = true
+    // Test application stability yourself before enabling this option
+    removeRootFiles = false
     // Keep matching BUNDLE-METADATA files when removeBundleMetadata is true
     bundleMetaDataWhiteList = setOf(
         "com.example.metadata"

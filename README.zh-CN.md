@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **迁移提示：请使用新版 [AndResGuard](https://github.com/dawnuu/AndResGuard)。**
+> 新版统一支持 AAB / APK 资源处理，接入与配置说明见 [迁移指南](https://github.com/dawnuu/AndResGuard/blob/codex/apk-support/README.zh-CN.md#迁移教程)。
+
 # AabResGuard
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -167,7 +171,8 @@ aabResGuard {
     // 是否移除 BUNDLE-METADATA，默认 true
     removeBundleMetadata = true
     // 是否移除 root 目录，默认 false
-    removeRootFiles = true
+    // 开启后需自行测试稳定性
+    removeRootFiles = false
     // removeBundleMetadata 开启时，保留匹配的 BUNDLE-METADATA 文件
     bundleMetaDataWhiteList = [
         "com.example.metadata"
@@ -232,7 +237,8 @@ configure<AabResGuardExtension> {
     // 是否移除 BUNDLE-METADATA，默认 true
     removeBundleMetadata = true
     // 是否移除 root 目录，默认 false
-    removeRootFiles = true
+    // 开启后需自行测试稳定性
+    removeRootFiles = false
     // removeBundleMetadata 开启时，保留匹配的 BUNDLE-METADATA 文件
     bundleMetaDataWhiteList = setOf(
         "com.example.metadata"
