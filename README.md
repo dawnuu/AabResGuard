@@ -1,6 +1,6 @@
 > [!IMPORTANT]
 > **Migration notice: use the new [AndResGuard](https://github.com/dawnuu/AndResGuard) project.**
-> The new project supports resource processing for both AAB and APK. See the [migration guide](https://github.com/dawnuu/AndResGuard/blob/codex/apk-support/README.md#migration-guide) for integration and configuration.
+> The new project supports resource processing for both AAB and APK. See the [migration guide](https://github.com/dawnuu/AndResGuard/blob/develop/README.md#migration-guide) for integration and configuration.
 
 # AabResGuard
 

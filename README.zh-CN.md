@@ -1,6 +1,6 @@
 > [!IMPORTANT]
 > **迁移提示：请使用新版 [AndResGuard](https://github.com/dawnuu/AndResGuard)。**
-> 新版统一支持 AAB / APK 资源处理，接入与配置说明见 [迁移指南](https://github.com/dawnuu/AndResGuard/blob/codex/apk-support/README.zh-CN.md#迁移教程)。
+> 新版统一支持 AAB / APK 资源处理，接入与配置说明见 [迁移指南](https://github.com/dawnuu/AndResGuard/blob/develop/README.zh-CN.md#迁移教程)。
 
 # AabResGuard
 
